@@ -20,7 +20,7 @@ npm test      # Node 22.6+; simulated protocol and engine tests
 ## Experiences
 
 - **Tetris:** seven tetrominoes, rotation with wall kicks, ghost landing preview, soft/hard drops, next piece, score, line clearing and increasing difficulty.
-- **Lichtkrant:** editable scrolling text using a 5×7 font, plus rainbow waves and color ripples. Supports A–Z, digits, spaces and basic punctuation; other characters use a question-mark glyph.
+- **Marquee:** editable scrolling text using a 5×7 font, plus rainbow waves and color ripples. Supports A–Z, digits, spaces and basic punctuation; other characters use a question-mark glyph.
 - **Snake:** food, growth, score and wall/self collision.
 - **Rainbow:** a continuous animated color field.
 - **Pixel studio:** paint or erase pixels, save up to 200 frames, play the sequence, import/export JSON. Export frames before resetting or changing modes/layouts; edits are held in memory.

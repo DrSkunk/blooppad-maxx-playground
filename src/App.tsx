@@ -20,7 +20,7 @@ const modes: {
   },
   {
     id: "scroller",
-    name: "Lichtkrant",
+    name: "Marquee",
     label: "SAY IT IN PIXELS",
     icon: "≋",
     desc: "Your message, in lights. Let your words travel across every connected pad.",
