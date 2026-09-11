@@ -1,8 +1,9 @@
 /* The engine and MIDI adapter are mutable external services. The single scheduler publishes frames to React. */
 /* oxlint-disable react/immutability */
 import { useEffect, useState } from "react";
-import { Engine, palette, shapes } from "./lib/engine";
+import { Engine, duelModes, palette, shapes, teams, twoPlayerModes } from "./lib/engine";
 import type { Mode, RGB } from "./lib/engine";
+import type { Difficulty } from "./lib/games.ts";
 import { MidiAdapter } from "./lib/midi";
 const modes: {
   id: Mode;
@@ -45,6 +46,34 @@ const modes: {
     label: "FIND THE SWITCH",
     icon: "☷",
     desc: "One press changes five lights. Turn them all off to solve the puzzle.",
+  },
+  {
+    id: "reversi",
+    name: "Reversi",
+    label: "FLIP THE BOARD",
+    icon: "◐",
+    desc: "Trap a line of pixels between two of yours and flip them. Most discs at the end wins.",
+  },
+  {
+    id: "connect",
+    name: "Connect four",
+    label: "LINE THEM UP",
+    icon: "◍",
+    desc: "Drop a pixel in any column. Four in a row — across, down or diagonally — takes it.",
+  },
+  {
+    id: "tug",
+    name: "Tug of war",
+    label: "FASTEST FINGER",
+    icon: "⇄",
+    desc: "A light appears on each side. Hit yours first and pull the rope. Jump early and you lose ground.",
+  },
+  {
+    id: "masher",
+    name: "Button masher",
+    label: "MASH TO WIN",
+    icon: "⚡",
+    desc: "Two halves, one rope. Mash your side faster than your rival before it drifts back to the middle.",
   },
   {
     id: "rainbow",
@@ -212,6 +241,12 @@ export function App() {
         engine.running = !engine.running;
         force();
       }
+      const duel: Record<string, 1 | 2> = { a: 1, l: 2 };
+      const side = duel[e.key.toLowerCase()];
+      if (side && duelModes.includes(engine.mode)) {
+        e.preventDefault();
+        if (!e.repeat) engine.pressKey(side);
+      }
     };
     const up = (e: KeyboardEvent) => {
       held.delete(e.key);
@@ -313,6 +348,27 @@ export function App() {
     }
   }
   const current = modes.find((m) => m.id === mode)!;
+  const twoPlayer = twoPlayerModes.includes(mode),
+    duel = duelModes.includes(mode),
+    teamScores = duel
+      ? mode === "tug"
+        ? engine.rounds
+        : engine.presses
+      : engine.counts,
+    scoreNoun = mode === "masher" ? "presses" : "discs",
+    matchStatus = !twoPlayer
+      ? ""
+      : engine.over
+        ? engine.winner === 3
+          ? "A perfect draw. Press a pad to play again."
+          : `${engine.winner === 1 ? "Pink" : "Blue"} wins! Press a pad to play again.`
+        : duel
+          ? engine.message
+          : `${engine.turn === 1 ? "Pink" : "Blue"} to move${
+              engine.opponent === "ai" && engine.turn === engine.aiSide
+                ? " · AI is thinking…"
+                : ""
+            }${engine.message ? ` · ${engine.message}` : ""}`;
   return (
     <div className="app">
       <aside className="sidebar">
@@ -453,7 +509,9 @@ export function App() {
                 {engine.over
                   ? mode === "lights"
                     ? "SOLVED · PRESS A PAD"
-                    : engine.endingPhase === "flash"
+                    : twoPlayer
+                      ? `${engine.winner === 3 ? "DRAW" : engine.winner === 1 ? "PINK WINS" : "BLUE WINS"} · PRESS A PAD`
+                      : engine.endingPhase === "flash"
                       ? "GAME OVER"
                       : engine.endingPhase === "score"
                         ? "YOUR FINAL SCORE"
@@ -552,7 +610,9 @@ export function App() {
                   : engine.over
                     ? "↻ Play again"
                     : "▶ Start " +
-                      (mode === "tetris" || mode === "snake" ? "game" : "demo")}
+                      (mode === "tetris" || mode === "snake" || twoPlayer
+                        ? "game"
+                        : "demo")}
               </button>
               <button
                 className="reset"
@@ -578,7 +638,9 @@ export function App() {
                 <h2>
                   {mode === "tetris" || mode === "snake"
                     ? "The score"
-                    : "Make it yours"}
+                    : twoPlayer
+                      ? "The match"
+                      : "Make it yours"}
                 </h2>
                 <span>↗</span>
               </div>
@@ -734,6 +796,109 @@ export function App() {
                     Press a cell to flip it and its up, down, left and right
                     neighbors. Every generated puzzle is solvable. Moves cross
                     pad boundaries.
+                  </p>
+                </>
+              ) : twoPlayerModes.includes(mode) ? (
+                <>
+                  <div className="segmented">
+                    {(["ai", "human"] as const).map((kind) => (
+                      <button
+                        key={kind}
+                        className={engine.opponent === kind ? "active" : ""}
+                        onClick={() => {
+                          engine.opponent = kind;
+                          engine.reset();
+                          force();
+                        }}
+                      >
+                        {kind === "ai" ? "◐ Play the AI" : "◑ Two players"}
+                      </button>
+                    ))}
+                  </div>
+                  {engine.opponent === "ai" && (
+                    <label>
+                      AI strength
+                      <select
+                        value={engine.difficulty}
+                        onChange={(e) => {
+                          engine.difficulty = e.target.value as Difficulty;
+                          force();
+                        }}
+                      >
+                        <option value="easy">Easy going</option>
+                        <option value="normal">Fair fight</option>
+                        <option value="hard">No mercy</option>
+                      </select>
+                    </label>
+                  )}
+                  <div className="stats">
+                    <div>
+                      <span>
+                        Pink {mode === "tug" ? "rounds" : scoreNoun}
+                        {engine.opponent === "ai" ? " · you" : ""}
+                      </span>
+                      <b style={{ color: `rgb(${teams[0]})` }}>
+                        {teamScores[0]}
+                      </b>
+                    </div>
+                    <div>
+                      <span>
+                        Blue {mode === "tug" ? "rounds" : scoreNoun}
+                        {engine.opponent === "ai" ? " · AI" : ""}
+                      </span>
+                      <b style={{ color: `rgb(${teams[1]})` }}>
+                        {teamScores[1]}
+                      </b>
+                    </div>
+                  </div>
+                  {duelModes.includes(mode) && (
+                    <>
+                      <label className="range-label">
+                        Rope <b>{Math.round((engine.rope / engine.duelLength) * 100)}% pink</b>
+                      </label>
+                      <div className="rope-track">
+                        <span
+                          style={{
+                            width: `${(engine.rope / engine.duelLength) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+                  <p className="muted" role="status">
+                    {matchStatus}
+                  </p>
+                  <div className="paint-actions">
+                    <button
+                      onClick={() => {
+                        engine.reset();
+                        force();
+                      }}
+                    >
+                      New match
+                    </button>
+                    {engine.opponent === "ai" &&
+                      (mode === "reversi" || mode === "connect") && (
+                        <button
+                          onClick={() => {
+                            engine.aiSide = engine.aiSide === 1 ? 2 : 1;
+                            engine.reset();
+                            force();
+                          }}
+                        >
+                          AI plays {engine.aiSide === 1 ? "blue" : "pink"}
+                          {" "}instead
+                        </button>
+                      )}
+                  </div>
+                  <p className="muted">
+                    {mode === "reversi"
+                      ? "Pink starts. Dim cells show your legal moves; the pulsing cell is the last disc played. Passing is automatic when you have no move."
+                      : mode === "connect"
+                        ? "Press any cell in a column to drop a disc there. Dim cells preview where it lands. Four in a row wins."
+                        : mode === "tug"
+                          ? "Wait for the white light in your half, then hit it. Pressing early or hitting the wrong cell hands the round to your rival. Keyboard: A and L."
+                          : "Mash any cell in your half. The rope drifts back to the middle, so keep going. Keyboard: A and L."}
                   </p>
                 </>
               ) : mode === "scroller" ? (
@@ -946,10 +1111,25 @@ export function App() {
                     ? "Toggle cells, save your start, then press Start demo. Pause to step one generation at a time."
                     : mode === "lights"
                       ? "Tap a light to flip its cross. Use Tab and Enter to play with a keyboard."
-                      : "Same controls on your screen and on your pad."}
+                      : twoPlayer
+                        ? "Pick the AI or a friend, then play on screen or on the pads together."
+                        : "Same controls on your screen and on your pad."}
               </p>
             </div>
           </div>
+          {duel && (
+            <div className="key-guide">
+              <span>
+                <kbd>A</kbd> Pink press
+              </span>
+              <span>
+                <kbd>L</kbd> Blue press
+              </span>
+              <span>
+                <kbd>P</kbd> Pause
+              </span>
+            </div>
+          )}
           {(mode === "tetris" || mode === "snake") && (
             <div className="key-guide">
               <span>

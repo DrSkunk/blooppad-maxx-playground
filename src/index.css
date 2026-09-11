@@ -533,6 +533,19 @@ h1 {
   font-size: 18px;
   font-weight: 500;
 }
+.rope-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgb(103 153 255 / 45%);
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.rope-track span {
+  display: block;
+  height: 100%;
+  background: rgb(255 104 139);
+  transition: width 0.08s linear;
+}
 .next-piece {
   margin-top: 18px;
   border-top: 1px solid #30313a;

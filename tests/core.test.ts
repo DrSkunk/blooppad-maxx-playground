@@ -1,6 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Engine } from "../src/lib/engine.ts";
+import {
+  connectBest,
+  reversiApply,
+  reversiBest,
+  reversiCount,
+  reversiInit,
+  reversiMoves,
+} from "../src/lib/games.ts";
 import { MidiAdapter, decode, encode } from "../src/lib/midi.ts";
 
 test("exact SysEx bytes, corners, clamping, full frame and changed-cell batching", () => {
@@ -487,4 +495,278 @@ test("Lights Out generated puzzles are solved by replaying their scramble and re
   } finally {
     Math.random = original;
   }
+});
+test("Reversi opens with four discs, flips a bracketed line and previews legal moves", () => {
+  const e = new Engine();
+  e.configure("reversi", 8, 8);
+  e.opponent = "human";
+  assert.deepEqual(e.counts, [2, 2]);
+  assert.deepEqual(
+    [...e.legal.keys()].sort((a, b) => a - b),
+    [19, 26, 37, 44],
+  );
+  const hints = e.render();
+  assert.ok(hints[19].some(Boolean) && !hints[20].some(Boolean));
+  e.onPad(2, 3, true);
+  e.onPad(2, 3, false);
+  assert.equal(e.cells[19], 1);
+  assert.equal(e.cells[27], 1, "the trapped disc flips");
+  assert.deepEqual(e.counts, [4, 1]);
+  assert.equal(e.turn, 2);
+  e.onPad(2, 3, true);
+  assert.equal(e.counts[0], 4, "occupied and illegal cells are ignored");
+});
+test("Reversi passes a player with no move and scores the finished board", () => {
+  const e = new Engine();
+  e.configure("reversi", 8, 8);
+  e.opponent = "human";
+  e.cells = e.cells.map(() => 1);
+  e.cells[0] = 0;
+  e.cells[1] = 2;
+  e.cells[63] = 0;
+  e.cells[62] = 2;
+  e.turn = 1;
+  e.legal = reversiMoves(e.cells, 8, 8, 1);
+  e.onPad(0, 0, true);
+  assert.equal(e.passes, 1, "blue has no move and passes");
+  assert.equal(e.turn, 1);
+  assert.match(e.message, /Blue/);
+  e.onPad(7, 7, true);
+  assert.equal(e.over, true);
+  assert.equal(e.winner, 1);
+  assert.deepEqual(e.counts, [64, 0]);
+  assert.equal(e.resultText, "PINK WINS 64-0");
+  assert.ok(
+    e.render().some((c) => c.some(Boolean)) ||
+      (e.update(0.4), e.render().some((c) => c.some(Boolean))),
+    "the winner is announced on the pads",
+  );
+});
+test("Reversi AI answers on its turn and finishes a legal game against itself", () => {
+  const e = new Engine();
+  e.configure("reversi", 8, 8);
+  e.opponent = "ai";
+  e.difficulty = "normal";
+  e.onPad(2, 3, true);
+  e.onPad(2, 3, false);
+  assert.equal(e.turn, 2);
+  e.onPad(3, 2, true);
+  assert.equal(e.cells[26], 0, "human presses are ignored on the AI turn");
+  e.update(0.5);
+  assert.equal(e.turn, 1, "the AI replies after its thinking pause");
+  assert.equal(e.counts[1] > 1, true);
+  let cells = reversiInit(8, 8),
+    player: 1 | 2 = 1,
+    guard = 0;
+  for (;;) {
+    if (guard++ > 80) break;
+    const moves = reversiMoves(cells, 8, 8, player);
+    if (!moves.size) {
+      if (!reversiMoves(cells, 8, 8, player === 1 ? 2 : 1).size) break;
+      player = player === 1 ? 2 : 1;
+      continue;
+    }
+    const index = reversiBest(cells, 8, 8, player, "hard");
+    assert.ok(moves.has(index), "the AI only plays legal moves");
+    cells = reversiApply(cells, index, player, moves.get(index)!);
+    player = player === 1 ? 2 : 1;
+  }
+  const [one, two] = reversiCount(cells);
+  assert.equal(cells.filter(Boolean).length, one + two);
+  assert.ok(one + two > 20, "a full AI game fills the board");
+});
+test("Connect four stacks columns, detects lines and calls a draw", () => {
+  const e = new Engine();
+  e.configure("connect", 8, 8);
+  e.opponent = "human";
+  e.onPad(0, 3, true);
+  assert.equal(e.cells[59], 1, "discs fall to the lowest free row");
+  e.onPad(4, 3, true);
+  assert.equal(e.cells[51], 2, "any cell in a column drops there");
+  for (const [row, col] of [
+    [0, 0],
+    [0, 1],
+    [0, 0],
+    [0, 1],
+    [0, 0],
+    [0, 1],
+    [0, 0],
+  ] as const) {
+    e.onPad(row, col, true);
+    e.onPad(row, col, false);
+  }
+  assert.equal(e.over, true);
+  assert.equal(e.winner, 1);
+  assert.equal(e.winLine.length, 4);
+  assert.equal(e.resultText, "PINK WINS");
+  const full = new Engine();
+  full.configure("connect", 8, 8);
+  full.opponent = "human";
+  full.cells = full.cells.map((_, i) =>
+    ((i % 8) + 2 * Math.floor(i / 8)) % 4 < 2 ? 1 : 2,
+  );
+  full.cells[0] = 0;
+  full.turn = 1;
+  full.onPad(5, 0, true);
+  assert.equal(full.cells[0], 1);
+  assert.equal(full.over, true);
+  assert.equal(full.winner, 3, "a full board without a line is a draw");
+  assert.equal(full.resultText, "DRAW");
+});
+test("Connect four AI wins when it can and blocks when it must", () => {
+  const width = 8,
+    height = 8,
+    cells = Array.from({ length: width * height }, () => 0);
+  cells[height * width - 8] = 2;
+  cells[height * width - 7] = 2;
+  cells[height * width - 6] = 2;
+  assert.equal(connectBest(cells, width, height, 2, "hard"), 3, "takes the win");
+  const threat = Array.from({ length: width * height }, () => 0);
+  threat[height * width - 8] = 1;
+  threat[height * width - 7] = 1;
+  threat[height * width - 6] = 1;
+  assert.equal(
+    connectBest(threat, width, height, 2, "hard"),
+    3,
+    "blocks the open three",
+  );
+  const e = new Engine();
+  e.configure("connect", 8, 8);
+  e.opponent = "ai";
+  e.difficulty = "hard";
+  e.onPad(0, 3, true);
+  e.onPad(0, 3, false);
+  assert.equal(e.turn, 2);
+  e.update(0.5);
+  assert.equal(e.turn, 1);
+  assert.equal(e.cells.filter((c) => c === 2).length, 1);
+});
+test("Tug of war rewards the fastest light and punishes early or wrong presses", () => {
+  const e = new Engine();
+  e.configure("tug", 8, 8);
+  e.opponent = "human";
+  assert.equal(e.duelState, "countdown");
+  assert.equal(e.rope, 4);
+  e.onPad(0, 0, true, "p1");
+  assert.equal(e.rope, 3, "a false start hands the round to the rival");
+  assert.equal(e.rounds[1], 1);
+  assert.match(e.message, /Pink/);
+  e.update(3);
+  assert.equal(e.duelState, "countdown");
+  e.update(3);
+  assert.equal(e.duelState, "go");
+  const target = e.targets[0];
+  assert.ok(target >= 0 && target % 8 < 4, "pink lights up in the left half");
+  assert.ok(e.targets[1] % 8 >= 4, "blue lights up in the right half");
+  assert.ok(e.render()[target].every((c) => c === 255));
+  const wrong = target % 8 === 0 ? target + 1 : target - 1;
+  e.onPad(Math.floor(wrong / 8), wrong % 8, true, "p1");
+  assert.equal(e.rope, 2, "hitting the wrong light loses the round");
+  e.update(3);
+  e.update(3);
+  e.update(0.12);
+  e.onPad(Math.floor(e.targets[0] / 8), e.targets[0] % 8, true, "p1");
+  assert.equal(e.rope, 3, "the correct light pulls the rope");
+  assert.equal(e.rounds[0], 1);
+  assert.ok((e.reactions[0] ?? 0) > 0);
+});
+test("Tug of war AI reacts on its own, and reaching the edge ends the match", () => {
+  const e = new Engine();
+  e.configure("tug", 8, 8);
+  e.opponent = "ai";
+  e.difficulty = "hard";
+  e.update(3);
+  assert.equal(e.duelState, "go");
+  e.update(1.2);
+  assert.equal(e.rounds[1], 1, "the AI presses its own light");
+  assert.equal(e.rope, 3);
+  e.rope = 7;
+  e.update(3);
+  e.update(3);
+  e.update(0.05);
+  e.onPad(Math.floor(e.targets[0] / 8), e.targets[0] % 8, true, "p1");
+  assert.equal(e.over, true);
+  assert.equal(e.winner, 1);
+  assert.equal(e.resultText, "PINK WINS");
+});
+test("Button masher counts one press per release, drifts back and supports vertical halves", () => {
+  const e = new Engine();
+  e.configure("masher", 8, 8);
+  e.opponent = "human";
+  e.update(1.3);
+  assert.equal(e.duelState, "go");
+  const start = e.rope;
+  e.onPad(3, 1, true, "p1");
+  e.onPad(3, 1, true, "p1");
+  assert.ok(Math.abs(e.rope - (start + 0.34)) < 1e-9, "held presses count once");
+  assert.equal(e.presses[0], 1);
+  e.onPad(3, 1, false, "p1");
+  e.onPad(3, 1, true, "p1");
+  assert.equal(e.presses[0], 2);
+  e.onPad(3, 6, true, "p2");
+  assert.equal(e.presses[1], 1);
+  const before = e.rope;
+  e.update(0.5);
+  assert.ok(e.rope < before, "an idle rope drifts back to the middle");
+  const tall = new Engine();
+  tall.configure("masher", 8, 32);
+  assert.equal(tall.duelAxis, "y");
+  assert.equal(tall.sideOf(2, 4), 1);
+  assert.equal(tall.sideOf(20, 4), 2);
+  assert.equal(tall.rope, 16);
+});
+test("Button masher AI mashes and a finished match restarts from a pad", () => {
+  const e = new Engine();
+  e.configure("masher", 8, 8);
+  e.opponent = "ai";
+  e.difficulty = "hard";
+  e.update(1.3);
+  e.rope = 0.5;
+  e.update(0.6);
+  assert.equal(e.over, true);
+  assert.equal(e.winner, 2);
+  assert.equal(e.resultText, "BLUE WINS");
+  e.update(1);
+  e.onPad(0, 0, true, "p1");
+  assert.equal(e.over, false);
+  assert.equal(e.running, true);
+  assert.equal(e.rope, 4, "a fresh match starts centred");
+});
+test("Two-player modes keep the whole canvas lit on every layout", () => {
+  for (const mode of ["reversi", "connect", "tug", "masher"] as const)
+    for (const [w, h] of [
+      [8, 8],
+      [32, 8],
+      [8, 32],
+    ] as const) {
+      const e = new Engine();
+      e.configure(mode, w, h);
+      e.update(1.5);
+      const frame = e.render();
+      assert.equal(frame.length, w * h);
+      assert.ok(
+        frame.every(
+          (c) => c.length === 3 && c.every((v) => Number.isFinite(v) && v >= 0),
+        ),
+        `${mode} ${w}x${h} renders valid colors`,
+      );
+    }
+});
+test("Keyboard presses drive both sides of the duels", () => {
+  const e = new Engine();
+  e.configure("tug", 8, 8);
+  e.opponent = "human";
+  e.update(3);
+  e.update(3);
+  e.update(0.2);
+  assert.equal(e.duelState, "go");
+  e.pressKey(2);
+  assert.equal(e.rounds[1], 1, "blue wins the round from the keyboard");
+  const m = new Engine();
+  m.configure("masher", 8, 8);
+  m.opponent = "human";
+  m.update(1.3);
+  m.pressKey(1);
+  m.pressKey(1);
+  assert.equal(m.presses[0], 2, "mashing a key is not deduplicated");
 });

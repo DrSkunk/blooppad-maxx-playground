@@ -1,6 +1,37 @@
+import {
+  connectBest,
+  connectDrop,
+  connectLine,
+  mashInterval,
+  other,
+  reactionTime,
+  reversiApply,
+  reversiBest,
+  reversiCount,
+  reversiInit,
+  reversiMoves,
+} from "./games.ts";
+import type { Cells, Difficulty, Player } from "./games.ts";
 export type RGB = [number, number, number];
 export type Mode =
-  "tetris" | "scroller" | "snake" | "rainbow" | "paint" | "life" | "lights";
+  | "tetris"
+  | "scroller"
+  | "snake"
+  | "rainbow"
+  | "paint"
+  | "life"
+  | "lights"
+  | "reversi"
+  | "connect"
+  | "tug"
+  | "masher";
+export const duelModes: Mode[] = ["tug", "masher"];
+export const twoPlayerModes: Mode[] = ["reversi", "connect", "tug", "masher"];
+/* Player one is pink, player two is blue, everywhere on screen and on the pads. */
+export const teams: RGB[] = [
+  [255, 104, 139],
+  [103, 153, 255],
+];
 export const palette: RGB[] = [
   [173, 119, 255],
   [77, 221, 207],
@@ -110,6 +141,30 @@ export class Engine {
   pending = [1, 0];
   food = 0;
   held = new Set<string>();
+  /* Two-player state: shared board, turn, opponent configuration and duel timings. */
+  cells: Cells = [];
+  turn: Player = 1;
+  winner = 0;
+  opponent: "human" | "ai" = "ai";
+  difficulty: Difficulty = "normal";
+  aiSide: Player = 2;
+  lastMove = -1;
+  winLine: number[] = [];
+  passes = 0;
+  message = "";
+  private aiTimer = 0;
+  duelState: "countdown" | "go" | "result" = "countdown";
+  targets: [number, number] = [-1, -1];
+  reactions: [number | null, number | null] = [null, null];
+  rounds: [number, number] = [0, 0];
+  presses: [number, number] = [0, 0];
+  roundWinner = 0;
+  rope = 0;
+  private duelTimer = 0;
+  private goTime = 0;
+  private aiReaction = 0;
+  private aiMash = 0;
+  legal = new Map<number, number[]>();
   constructor() {
     this.reset();
   }
@@ -139,7 +194,16 @@ export class Engine {
     this.spawn();
     this.generation = 0;
     this.moves = 0;
+    this.winner = 0;
+    this.lastMove = -1;
+    this.winLine = [];
+    this.passes = 0;
+    this.message = "";
+    this.cells = [];
     if (this.mode === "lights") this.newLightsPuzzle();
+    else if (this.mode === "reversi") this.newReversi();
+    else if (this.mode === "connect") this.newConnect();
+    else if (duelModes.includes(this.mode)) this.newDuel();
     else this.startingBoard = this.blank();
   }
   configure(mode: Mode, width: number, height: number) {
@@ -260,6 +324,19 @@ export class Engine {
     if (this.mode === "life") {
       const i = row * this.width + col;
       this.board[i] = this.board[i].some(Boolean) ? [0, 0, 0] : [...palette[1]];
+      return;
+    }
+    if (this.mode === "reversi" || this.mode === "connect") {
+      if (!this.running) return;
+      const side = this.turn;
+      if (this.opponent === "ai" && side === this.aiSide) return;
+      if (this.mode === "reversi") this.playReversi(row * this.width + col);
+      else this.playConnect(col);
+      return;
+    }
+    if (duelModes.includes(this.mode)) {
+      if (!this.running) return;
+      this.press(this.sideOf(row, col), row * this.width + col);
       return;
     }
     if (this.mode === "lights") {
@@ -384,6 +461,250 @@ export class Engine {
     this.scoreTime = 0;
     this.held.clear();
   }
+  private finishMatch(winner: number) {
+    this.winner = winner;
+    this.finishGame();
+  }
+  newReversi() {
+    this.cells = reversiInit(this.width, this.height);
+    this.turn = 1;
+    this.legal = reversiMoves(this.cells, this.width, this.height, this.turn);
+    this.lastMove = -1;
+    this.winLine = [];
+    this.winner = 0;
+    this.passes = 0;
+    this.moves = 0;
+    this.over = false;
+    this.scoreTime = 0;
+    this.message = "";
+    this.aiTimer = 0;
+    this.running = true;
+    this.held.clear();
+  }
+  playReversi(index: number) {
+    const flips = this.legal.get(index);
+    if (!flips || this.over) return;
+    this.cells = reversiApply(this.cells, index, this.turn, flips);
+    this.lastMove = index;
+    this.moves++;
+    this.turn = other(this.turn);
+    this.aiTimer = 0;
+    this.advanceReversi();
+  }
+  private advanceReversi() {
+    this.message = "";
+    this.legal = reversiMoves(this.cells, this.width, this.height, this.turn);
+    if (this.legal.size) return;
+    const waiting = reversiMoves(
+      this.cells,
+      this.width,
+      this.height,
+      other(this.turn),
+    );
+    if (!waiting.size) {
+      const [one, two] = reversiCount(this.cells);
+      this.finishMatch(one > two ? 1 : two > one ? 2 : 3);
+      return;
+    }
+    this.passes++;
+    this.message = `${this.turn === 1 ? "Pink" : "Blue"} has no legal move and passes.`;
+    this.turn = other(this.turn);
+    this.legal = waiting;
+  }
+  newConnect() {
+    this.cells = Array.from({ length: this.width * this.height }, () => 0);
+    this.turn = 1;
+    this.legal = new Map();
+    this.lastMove = -1;
+    this.winLine = [];
+    this.winner = 0;
+    this.moves = 0;
+    this.over = false;
+    this.scoreTime = 0;
+    this.message = "";
+    this.aiTimer = 0;
+    this.running = true;
+    this.held.clear();
+  }
+  playConnect(column: number) {
+    if (this.over) return;
+    const index = connectDrop(this.cells, this.width, this.height, column);
+    if (index < 0) return;
+    this.cells[index] = this.turn;
+    this.lastMove = index;
+    this.moves++;
+    const line = connectLine(this.cells, this.width, this.height, index);
+    if (line) {
+      this.winLine = line;
+      this.finishMatch(this.turn);
+      return;
+    }
+    if (this.cells.every(Boolean)) {
+      this.finishMatch(3);
+      return;
+    }
+    this.turn = other(this.turn);
+    this.aiTimer = 0;
+  }
+  private moveAi() {
+    if (this.mode === "reversi") {
+      const index = reversiBest(
+        this.cells,
+        this.width,
+        this.height,
+        this.turn,
+        this.difficulty,
+      );
+      if (index >= 0) this.playReversi(index);
+      return;
+    }
+    const column = connectBest(
+      this.cells,
+      this.width,
+      this.height,
+      this.turn,
+      this.difficulty,
+    );
+    if (column >= 0) this.playConnect(column);
+  }
+  get duelAxis(): "x" | "y" {
+    return this.width >= this.height ? "x" : "y";
+  }
+  get duelLength() {
+    return this.duelAxis === "x" ? this.width : this.height;
+  }
+  sideOf(row: number, col: number): Player {
+    return (this.duelAxis === "x" ? col : row) < this.duelLength / 2 ? 1 : 2;
+  }
+  get counts(): [number, number] {
+    return reversiCount(this.cells);
+  }
+  newDuel() {
+    this.rope = this.duelLength / 2;
+    this.rounds = [0, 0];
+    this.presses = [0, 0];
+    this.reactions = [null, null];
+    this.targets = [-1, -1];
+    this.roundWinner = 0;
+    this.winner = 0;
+    this.over = false;
+    this.scoreTime = 0;
+    this.goTime = 0;
+    this.duelState = "countdown";
+    this.duelTimer = this.mode === "tug" ? 0.9 + Math.random() * 1.2 : 1.2;
+    this.message =
+      this.mode === "tug" ? "Wait for your light…" : "Get ready to mash…";
+    this.running = true;
+    this.held.clear();
+  }
+  private randomCell(side: Player) {
+    const half = Math.floor(this.duelLength / 2),
+      along = (side === 1 ? 0 : half) + Math.floor(Math.random() * half),
+      across = Math.floor(
+        Math.random() * (this.duelAxis === "x" ? this.height : this.width),
+      );
+    return this.duelAxis === "x"
+      ? across * this.width + along
+      : along * this.width + across;
+  }
+  private startRound() {
+    this.duelState = "go";
+    this.goTime = 0;
+    this.roundWinner = 0;
+    this.reactions = [null, null];
+    if (this.mode === "tug") {
+      this.targets = [this.randomCell(1), this.randomCell(2)];
+      this.aiReaction = reactionTime(this.difficulty);
+      this.message = "Press your light!";
+    } else {
+      this.targets = [-1, -1];
+      this.aiMash = mashInterval(this.difficulty);
+      this.message = "Mash your half!";
+    }
+  }
+  /* A press from a pad, the screen or a keyboard. Index -1 means "whatever my light is". */
+  press(side: Player, index = -1) {
+    if (!duelModes.includes(this.mode) || this.over || !this.running) return;
+    if (this.mode === "masher") {
+      if (this.duelState !== "go") return;
+      this.presses[side - 1]++;
+      this.rope += side === 1 ? 0.34 : -0.34;
+      this.checkRope();
+      return;
+    }
+    if (this.duelState === "countdown") {
+      this.endRound(other(side), `${this.name(side)} jumped the gun!`);
+      return;
+    }
+    if (this.duelState !== "go" || this.roundWinner) return;
+    const target = this.targets[side - 1];
+    if (index >= 0 && target >= 0 && index !== target) {
+      this.endRound(other(side), `${this.name(side)} hit the wrong light!`);
+      return;
+    }
+    this.reactions[side - 1] = this.goTime;
+    this.endRound(side, `${this.name(side)} pulls · ${this.goTime.toFixed(2)}s`);
+  }
+  pressKey(side: Player) {
+    this.press(side, this.mode === "tug" ? this.targets[side - 1] : -1);
+  }
+  private name(side: Player) {
+    return side === 1 ? "Pink" : "Blue";
+  }
+  private endRound(winner: Player, message: string) {
+    this.roundWinner = winner;
+    this.rounds[winner - 1]++;
+    this.rope += winner === 1 ? 1 : -1;
+    this.duelState = "result";
+    this.duelTimer = 0.8;
+    this.message = message;
+    this.checkRope();
+  }
+  private checkRope() {
+    this.rope = Math.max(0, Math.min(this.duelLength, this.rope));
+    if (this.rope >= this.duelLength) this.finishMatch(1);
+    else if (this.rope <= 0) this.finishMatch(2);
+  }
+  private updateDuel(dt: number) {
+    if (this.duelState === "countdown") {
+      this.duelTimer -= dt;
+      if (this.duelTimer <= 0) this.startRound();
+      return;
+    }
+    if (this.duelState === "result") {
+      this.duelTimer -= dt;
+      if (this.duelTimer > 0) return;
+      this.duelState = "countdown";
+      this.duelTimer = 0.9 + Math.random() * 1.2;
+      this.roundWinner = 0;
+      this.targets = [-1, -1];
+      this.reactions = [null, null];
+      this.message = "Wait for your light…";
+      return;
+    }
+    this.goTime += dt;
+    if (this.mode === "tug") {
+      if (
+        this.opponent === "ai" &&
+        !this.roundWinner &&
+        this.goTime >= this.aiReaction
+      )
+        this.press(this.aiSide, this.targets[this.aiSide - 1]);
+      return;
+    }
+    // Idle hands slide back towards the middle, so mashing has to be sustained.
+    const centre = this.duelLength / 2,
+      drift = Math.min(Math.abs(centre - this.rope), dt * 0.6);
+    this.rope += Math.sign(centre - this.rope) * drift;
+    if (this.opponent === "ai") {
+      this.aiMash -= dt;
+      while (this.aiMash <= 0 && !this.over) {
+        this.press(this.aiSide);
+        this.aiMash += mashInterval(this.difficulty);
+      }
+    }
+    this.checkRope();
+  }
   update(dt: number) {
     // Keep the score animation on the existing scheduler after gameplay stops.
     if (this.over) {
@@ -399,6 +720,18 @@ export class Engine {
         this.stepLife();
       }
     }
+    if (
+      (this.mode === "reversi" || this.mode === "connect") &&
+      this.opponent === "ai" &&
+      this.turn === this.aiSide
+    ) {
+      this.aiTimer += dt;
+      if (this.aiTimer >= 0.45) {
+        this.aiTimer = 0;
+        this.moveAi();
+      }
+    }
+    if (duelModes.includes(this.mode)) this.updateDuel(dt);
     if (
       this.mode === "tetris" &&
       this.tick >= Math.max(0.12, 0.7 - this.lines * 0.025)
@@ -443,6 +776,17 @@ export class Engine {
       const text = `SOLVED ${this.moves} MOVES`;
       return this.renderText(text, this.scoreTime + this.width / 8, palette[5]);
     }
+    if (this.over && twoPlayerModes.includes(this.mode))
+      return this.renderText(
+        this.resultText,
+        this.scoreTime + this.width / 8,
+        this.winner === 1 || this.winner === 2
+          ? teams[this.winner - 1]
+          : [255, 255, 255],
+      );
+    if (this.mode === "reversi" || this.mode === "connect")
+      return this.renderBoard();
+    if (duelModes.includes(this.mode)) return this.renderDuel();
     const f = this.board.map((c) => [...c] as RGB);
     if (this.mode === "tetris") {
       let gy = this.py;
@@ -533,6 +877,72 @@ export class Engine {
         Math.round(140 + 115 * Math.sin(phase + n)),
       ) as RGB;
     });
+  }
+  get resultText() {
+    if (this.winner === 3) return "DRAW";
+    const name = this.winner === 1 ? "PINK" : "BLUE";
+    if (this.mode === "reversi") {
+      const [one, two] = this.counts;
+      return `${name} WINS ${Math.max(one, two)}-${Math.min(one, two)}`;
+    }
+    return `${name} WINS`;
+  }
+  private renderBoard(): RGB[] {
+    const f = this.blank();
+    const human = this.opponent === "human" || this.turn !== this.aiSide;
+    if (this.mode === "reversi" && human)
+      for (const index of this.legal.keys())
+        f[index] = teams[this.turn - 1].map((c) => Math.round(c * 0.14)) as RGB;
+    if (this.mode === "connect" && human)
+      for (let column = 0; column < this.width; column++) {
+        const index = connectDrop(this.cells, this.width, this.height, column);
+        if (index >= 0)
+          f[index] = teams[this.turn - 1].map((c) =>
+            Math.round(c * 0.14),
+          ) as RGB;
+      }
+    this.cells.forEach((cell, i) => {
+      if (cell) f[i] = [...teams[cell - 1]] as RGB;
+    });
+    if (this.lastMove >= 0 && this.cells[this.lastMove]) {
+      const pulse = 0.5 + 0.5 * Math.sin(this.time * 7);
+      f[this.lastMove] = teams[this.cells[this.lastMove] - 1].map((c) =>
+        Math.round(c + (255 - c) * 0.5 * pulse),
+      ) as RGB;
+    }
+    for (const index of this.winLine) f[index] = [255, 255, 255];
+    return f;
+  }
+  private renderDuel(): RGB[] {
+    const f = this.blank(),
+      front = Math.max(0, Math.min(this.duelLength, this.rope)),
+      edge = Math.round(front);
+    for (let y = 0; y < this.height; y++)
+      for (let x = 0; x < this.width; x++) {
+        const along = this.duelAxis === "x" ? x : y,
+          mine = along < edge,
+          border = along === edge - 1 || along === edge,
+          scale = border ? 0.8 : 0.2;
+        f[y * this.width + x] = teams[mine ? 0 : 1].map((c) =>
+          Math.round(c * scale),
+        ) as RGB;
+      }
+    if (this.mode === "tug" && this.duelState === "go")
+      this.targets.forEach((target) => {
+        if (target >= 0) f[target] = [255, 255, 255];
+      });
+    if (this.duelState === "result" && this.roundWinner) {
+      const half = this.duelLength / 2;
+      for (let y = 0; y < this.height; y++)
+        for (let x = 0; x < this.width; x++) {
+          const along = this.duelAxis === "x" ? x : y;
+          if ((along < half ? 1 : 2) !== this.roundWinner) continue;
+          f[y * this.width + x] = teams[this.roundWinner - 1].map((c) =>
+            Math.round(c * 0.55),
+          ) as RGB;
+        }
+    }
+    return f;
   }
   private renderText(text: string, time: number, color: RGB): RGB[] {
     const f = this.blank();
