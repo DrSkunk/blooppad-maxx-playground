@@ -63,3 +63,19 @@ Each frame must contain `width × height` RGB tuples, with finite channels from 
 Automated tests use mock MIDI ports, not physical devices. They check exact bytes, corner addresses, 260-byte full frames, batching, duplicate suppression/releases, exclusive assignment, reconnect repaint, send failure recovery, listener cleanup, game rules and all supported canvas sizes. Browser verification checks the simulator, keyboard controls, mode switching, scroller, painting/frame playback and multi-pad layouts.
 
 Physical orientation, real device pairing, USB/MIDI throughput and hardware reconnect behavior still need checking on BLOOPPAD-MAXX units.
+
+## GitHub Pages CI/CD
+
+`.github/workflows/pages.yml` runs on pull requests to `main`, pushes to `main`, and manual dispatches. It installs the lockfile dependencies with Node 24, treats lint warnings as failures, runs the tests, and builds the production app. Successful pushes or manual runs on `main` upload `dist` and deploy to the `github-pages` environment. Pull requests never deploy or receive deployment permissions. Deployments are serialized without interrupting an active publish.
+
+To activate it after pushing this folder to a GitHub repository:
+
+1. In **Settings → Pages → Build and deployment**, select **GitHub Actions** as the source.
+2. Push to `main`, or run **CI and GitHub Pages** from the Actions tab on `main`.
+3. Open the URL shown by the deployment job. No personal access token or extra secrets are required.
+
+If the default branch has another name, update the branch filters and both `refs/heads/main` guards in the workflow. Vite emits relative asset URLs, so the same build works under `/blooppad-maxx-playground/`, another repository path, or a custom domain. GitHub Pages HTTPS also provides the secure context needed for Web MIDI.
+
+GitHub Pages is configured to publish via Actions at https://drskunk.github.io/blooppad-maxx-playground/.
+
+References: [GitHub custom Pages workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages), [Vite deployment guide](https://vite.dev/guide/static-deploy.html).
