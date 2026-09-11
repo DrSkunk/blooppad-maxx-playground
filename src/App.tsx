@@ -377,48 +377,74 @@ export function App() {
                 : ""
             }${engine.message ? ` · ${engine.message}` : ""}`;
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <a className="brand" href="./">
-          <span className="brandmark">▦</span>
+    <div className="min-h-screen bg-canvas text-app md:flex">
+      <aside className="border-line-soft bg-sidebar compact:static compact:w-full compact:border-r-0 compact:border-b compact:px-4 compact:py-4 tablet:w-19 tablet:px-2.5 tablet:py-7 fixed inset-y-0 left-0 z-10 flex w-sidebar shrink-0 flex-col border-r px-5 pt-9 pb-5 laptop:w-sidebar-sm laptop:px-3">
+        <a
+          className="font-display compact:mb-4 compact:text-[22px] tablet:mx-2 tablet:mb-11 mx-2.5 mb-14 flex items-center gap-3 text-2xl leading-none font-bold tracking-tight"
+          href="./"
+        >
+          <span className="bg-brandmark text-lavender-text compact:size-9 compact:text-[28px] tablet:min-w-9 flex size-10 items-center justify-center rounded-xl text-[34px]">
+            ▦
+          </span>
           <span>
-            bloop<span className="brandlight">pad</span>
-            <small>MAXX PLAYGROUND</small>
+            bloop<span className="font-normal">pad</span>
+            <small className="text-dim mt-2 block font-sans text-[8px] tracking-[0.275em] compact:text-[7px]">
+              MAXX PLAYGROUND
+            </small>
           </span>
         </a>
-        <div className="navlabel">YOUR PIXEL PLAYGROUND</div>
-        <nav>
+        <div className="text-dim tablet:hidden mb-4 pl-4 text-[9px] font-semibold tracking-[0.18em]">
+          YOUR PIXEL PLAYGROUND
+        </div>
+        <nav className="compact:flex compact:gap-1 compact:overflow-x-auto compact:pb-1">
           {modes.map((m) => (
             <button
               key={m.id}
-              className={"navitem " + (mode === m.id ? "selected" : "")}
+              className={`compact:mb-0 compact:flex-none compact:basis-17 compact:flex-col compact:gap-1 compact:px-1 compact:py-2 tablet:gap-0 tablet:px-3.5 tablet:text-[0px] mb-2 flex w-full items-center gap-3 rounded-lg px-4 py-3.5 text-left text-[13px] font-medium transition-colors hover:bg-surface ${mode === m.id ? "bg-selected text-lavender-text" : "text-nav"}`}
               onClick={() => configure(m.id)}
             >
-              <span className="navicon">{m.icon}</span>
+              <span className="compact:text-xl tablet:text-[23px] w-6 text-[22px] leading-none">
+                {m.icon}
+              </span>
               {m.name}
-              {mode === m.id && <span className="navdot" />}
-              {m.id === "paint" && <small>CREATE</small>}
+              {mode === m.id && (
+                <span className="bg-lavender ml-auto size-1.5 rounded-full tablet:hidden" />
+              )}
+              {m.id === "paint" && (
+                <small className="border-line ml-auto rounded border px-1 py-0.5 text-[7px] tracking-widest tablet:hidden">
+                  CREATE
+                </small>
+              )}
             </button>
           ))}
         </nav>
-        <div className="sidebar-note">
-          <span className="tiny-grid">▦</span>
-          <strong>Small grid. Big ideas.</strong>
-          <p>Play on screen or plug in your BLOOPPAD-MAXX.</p>
-          <span className="note-badge">HARDWARE OPTIONAL ↗</span>
+        <div className="border-line mt-auto mb-7 rounded-xl border bg-linear-to-br from-[#24202e] to-[#1a1b20] px-4 py-5 tablet:hidden">
+          <span className="text-lavender-text mb-4 block text-3xl">▦</span>
+          <strong className="text-xs font-medium">
+            Small grid. Big ideas.
+          </strong>
+          <p className="text-nav my-3 text-[11px] leading-5">
+            Play on screen or plug in your BLOOPPAD-MAXX.
+          </p>
+          <span className="text-lavender-text text-[7px] tracking-widest">
+            HARDWARE OPTIONAL ↗
+          </span>
         </div>
-        <div className="sidebar-bottom">
-          <span className="green-dot" />
-          Made for curious fingers<span>v1.0</span>
+        <div className="text-dim flex items-center gap-2 text-[9px] whitespace-nowrap tablet:hidden">
+          <span className="bg-success inline-block size-1.5 shrink-0 rounded-full" />
+          Made for curious fingers
+          <span className="ml-auto text-[8px]">v1.0</span>
         </div>
       </aside>
-      <main>
-        <header>
-          <div className="breadcrumb">
-            Playground <span>/</span> <b>{current.name}</b>
+      <main className="compact:ml-0 compact:w-full compact:px-4 tablet:ml-19 tablet:w-main-tablet tablet:px-5 wide:px-15 ml-sidebar w-main max-w-[1700px] px-10 laptop:ml-sidebar-sm laptop:w-main-laptop laptop:px-6">
+        <header className="border-line-soft compact:h-18 flex h-24 items-center justify-between border-b">
+          <div className="text-dim compact:text-[10px] text-xs">
+            Playground{" "}
+            <span className="compact:mx-2 mx-4 text-zinc-600">/</span>{" "}
+            <b className="font-medium text-zinc-300">{current.name}</b>
           </div>
           <button
-            className="connect"
+            className="border-line bg-surface compact:px-2 compact:py-2 flex items-center gap-2.5 rounded-lg border px-4 py-2.5 text-[11px] compact:text-[10px]"
             onClick={() => {
               setDevices(!devices);
               if (!midi?.access) void midi?.connect();
@@ -431,27 +457,32 @@ export function App() {
             <span>↗</span>
           </button>
         </header>
-        <section className="heading">
+        <section className="compact:py-7 wide:py-10 flex items-center justify-between py-8">
           <div>
-            <div className="eyebrow">
-              <span />
+            <div className="text-lavender-text flex items-center gap-2 text-[9px] tracking-[0.21em]">
+              <span className="bg-lavender size-1.5 rounded-sm" />
               LET’S PLAY WITH PIXELS
             </div>
-            <h1>
+            <h1 className="font-display compact:text-4xl tablet:text-[40px] my-2 text-5xl leading-tight font-semibold tracking-tight">
               {current.name}
-              <span className="heading-dot">.</span>
+              <span className="text-lavender">.</span>
             </h1>
-            <p>{current.desc}</p>
+            <p className="text-muted compact:text-[11px] max-w-lg text-xs leading-5 laptop:max-w-md">
+              {current.desc}
+            </p>
           </div>
-          <span className="sim-badge">
-            <span className="green-dot" />
+          <span className="border-line laptop:hidden flex items-center gap-2 whitespace-nowrap rounded-md border px-2.5 py-2 text-[8px] tracking-widest">
+            <span className="bg-success inline-block size-1.5 shrink-0 rounded-full" />
             {midi?.status === "Connected"
               ? "HARDWARE CONNECTED"
               : "SIMULATOR MODE"}
           </span>
         </section>
         {!devices && midi.error && (
-          <div className="device-panel" role="alert">
+          <div
+            className="border-device bg-device-bg mb-5 rounded-xl border p-5 text-xs"
+            role="alert"
+          >
             {midi.error}{" "}
             <button onClick={() => setDevices(true)}>
               Open device connections ↗
@@ -459,10 +490,13 @@ export function App() {
           </div>
         )}
         {devices && (
-          <section className="device-panel">
-            <div className="panel-title">
+          <section className="border-device bg-device-bg mb-5 rounded-xl border p-5 text-xs">
+            <div className="flex justify-between">
               Device connections{" "}
-              <button onClick={() => void midi?.connect()}>
+              <button
+                className="border-device rounded-md border px-2 py-1.5"
+                onClick={() => void midi?.connect()}
+              >
                 Retry connection
               </button>
             </div>
@@ -472,12 +506,16 @@ export function App() {
             </p>
             {midi?.error && <p role="alert">{midi.error}</p>}
             {Array.from({ length: count }, (_, i) => (
-              <div className="device-row" key={i}>
-                <b>Pad {i + 1}</b>
+              <div
+                className="compact:flex-wrap mt-3 flex items-center gap-4"
+                key={i}
+              >
+                <b className="compact:w-full">Pad {i + 1}</b>
                 {(["input", "output"] as const).map((type) => (
-                  <label key={type}>
+                  <label className="flex-1" key={type}>
                     {type}
                     <select
+                      className="border-line bg-surface my-2 w-full rounded-md border p-2.5 text-[11px] text-zinc-300"
                       value={midi?.slots[i]?.[type] ?? ""}
                       onChange={(e) => midi?.assign(i, type, e.target.value)}
                     >
@@ -494,7 +532,7 @@ export function App() {
                 ))}
               </div>
             ))}
-            <label className="check">
+            <label className="flex items-center gap-2 text-[11px] text-zinc-300">
               <input
                 type="checkbox"
                 checked={orientation}
@@ -502,17 +540,17 @@ export function App() {
               />{" "}
               Corner test: red ↖ · green ↗ · blue ↙ · white ↘
             </label>
-            <small>
+            <small className="text-nav mt-3 block text-[9px]">
               Choose each physical unit’s input and output. Orientation must be
               checked on hardware.
             </small>
           </section>
         )}
-        <div className="workspace">
-          <section className="play-panel">
-            <div className="play-top">
-              <span>
-                <span className="green-dot" />
+        <div className="compact:flex compact:flex-col grid grid-cols-workspace items-start gap-5 laptop:grid-cols-workspace-sm laptop:gap-4 tablet:grid-cols-workspace-tablet">
+          <section className="border-line bg-panel compact:w-full overflow-hidden rounded-xl border">
+            <div className="border-line-soft text-nav flex h-13 items-center justify-between border-b px-5 text-[8px] tracking-widest">
+              <span className="flex items-center gap-2">
+                <span className="bg-success size-1.5 rounded-full" />
                 {engine.over
                   ? mode === "lights"
                     ? "SOLVED · PRESS A PAD"
@@ -527,25 +565,29 @@ export function App() {
                     ? "LIVE PREVIEW"
                     : "READY TO PLAY"}
               </span>
-              <span>
+              <span className="flex items-center gap-2">
                 {engine.width} × {engine.height}
-                <i /> {count} {count === 1 ? "PAD" : "PADS"}
+                <i className="bg-dim mx-1 size-1 rounded-full" /> {count}{" "}
+                {count === 1 ? "PAD" : "PADS"}
               </span>
             </div>
             <div
-              className={"stage " + (layout === "vertical" ? "vertical" : "")}
+              className={`stage-grid compact:min-h-87 compact:p-6 tablet:p-5 wide:min-h-120 flex min-h-101 items-center justify-center px-8 py-10 laptop:min-h-91 laptop:px-5 laptop:py-9 ${layout === "vertical" ? "vertical" : ""}`}
             >
               <div
-                className="pads"
+                className="pads flex w-full max-w-[950px] items-center justify-center gap-3 compact:has-[>.pad-shell:nth-child(3)]:gap-1"
                 style={{
                   flexDirection: layout === "vertical" ? "column" : "row",
                 }}
               >
                 {Array.from({ length: count }, (_, p) => (
-                  <div className="pad-shell" key={p}>
-                    <div className="screw tl" />
-                    <div className="screw tr" />
-                    <div className="grid">
+                  <div
+                    className="pad-shell border-pad bg-pad-shell shadow-pad compact:max-w-77 compact:has-[~.pad-shell]:px-2 compact:has-[~.pad-shell]:pt-4 compact:has-[~.pad-shell]:pb-2 laptop:px-4 laptop:pt-5 laptop:pb-3 wide:max-w-97 relative w-full max-w-86 min-w-0 rounded-2xl border px-6 pt-6 pb-3"
+                    key={p}
+                  >
+                    <div className="bg-canvas border-pad absolute top-2.5 left-2.5 size-1 rounded-full border" />
+                    <div className="bg-canvas border-pad absolute top-2.5 right-2.5 size-1 rounded-full border" />
+                    <div className="bg-canvas border-black grid grid-cols-8 gap-2 rounded-lg border p-2 shadow-inner compact:has-[.pixel]:gap-1 laptop:gap-1 laptop:p-2 wide:gap-2">
                       {Array.from({ length: 64 }, (_, i) => {
                         const row =
                             Math.floor(i / 8) +
@@ -556,7 +598,7 @@ export function App() {
                         return (
                           <button
                             key={i}
-                            className={"pixel " + (lit ? "lit" : "")}
+                            className={`pixel aspect-square min-w-0 touch-none rounded-sm border border-white/5 p-0 transition hover:brightness-140 hover:outline hover:outline-lavender active:scale-90 ${lit ? "lit" : ""}`}
                             aria-label={`Pad ${p + 1}, row ${Math.floor(i / 8) + 1}, column ${(i % 8) + 1}`}
                             style={
                               lit
@@ -593,25 +635,34 @@ export function App() {
                         );
                       })}
                     </div>
-                    <div className="pad-brand">
-                      BLOOPPAD <b>MAXX</b>
-                      <span>●</span>
+                    <div className="font-display text-dim compact:has-[~.pad-shell]:text-[4px] mt-3 text-center text-[7px] tracking-[0.28em]">
+                      BLOOPPAD{" "}
+                      <b className="ml-1 text-[6px] tracking-wide text-zinc-400">
+                        MAXX
+                      </b>
+                      <span className="text-success absolute right-6 text-[6px]">
+                        ●
+                      </span>
                     </div>
-                    <div className="screw bl" />
-                    <div className="screw br" />
+                    <div className="bg-canvas border-pad absolute bottom-2.5 left-2.5 size-1 rounded-full border" />
+                    <div className="bg-canvas border-pad absolute right-2.5 bottom-2.5 size-1 rounded-full border" />
                   </div>
                 ))}
               </div>
             </div>
-            <div className="stage-caption">
-              <span>↖</span> Click the pads or use your keyboard{" "}
-              <span className="live-dot" />{" "}
+            <div className="text-dim compact:text-[7px] laptop:text-[7px] mx-3 mt-1 mb-7 flex flex-wrap items-center justify-center gap-2 text-[9px]">
+              <span className="text-sm text-zinc-400">↖</span> Click the pads or
+              use your keyboard{" "}
+              <span className="bg-dim mx-1 size-1 rounded-full" />{" "}
               {midi?.status === "Connected"
                 ? "SCREEN + HARDWARE IN SYNC"
                 : "HARDWARE OPTIONAL"}
             </div>
-            <div className="transport">
-              <button className="primary" onClick={toggle}>
+            <div className="border-line flex items-center gap-2.5 border-t px-6 py-4">
+              <button
+                className="bg-lavender text-selected hover:bg-lavender-hover rounded-md px-5 py-3 text-xs font-bold whitespace-nowrap"
+                onClick={toggle}
+              >
                 {engine.running
                   ? "Ⅱ Pause"
                   : engine.over
@@ -622,15 +673,15 @@ export function App() {
                         : "demo")}
               </button>
               <button
-                className="reset"
+                className="border-line flex items-center gap-2 rounded-md border px-3 py-2 text-lg"
                 onClick={() => {
                   engine.reset();
                   force();
                 }}
               >
-                ↻ <span>Reset</span>
+                ↻ <span className="text-[11px]">Reset</span>
               </button>
-              <span className="transport-hint">
+              <span className="text-dim laptop:hidden ml-auto max-w-25 text-[9px] leading-4">
                 {engine.over
                   ? "Press a pad or Play again for another round."
                   : engine.running
@@ -639,30 +690,32 @@ export function App() {
               </span>
             </div>
           </section>
-          <aside className="controls">
-            <section className="control-card">
-              <div className="card-heading">
-                <h2>
+          <aside className="compact:grid compact:w-full compact:grid-cols-2 compact:gap-3 flex flex-col gap-4">
+            <section className="border-line bg-card compact:p-4 wide:p-5 rounded-xl border p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xs font-semibold">
                   {mode === "tetris" || mode === "snake"
                     ? "The score"
                     : twoPlayer
                       ? "The match"
                       : "Make it yours"}
                 </h2>
-                <span>↗</span>
+                <span className="text-dim text-base">↗</span>
               </div>
               {mode === "tetris" || mode === "snake" ? (
                 <>
-                  <div className="score">
+                  <div className="font-display compact:text-3xl flex items-baseline gap-3 text-4xl font-medium tracking-wide">
                     {String(engine.score).padStart(4, "0")}
-                    <span>POINTS</span>
+                    <span className="text-dim font-sans text-[7px] tracking-widest">
+                      POINTS
+                    </span>
                   </div>
-                  <div className="stats">
+                  <div className="mt-4 flex gap-9">
                     <div>
-                      <span>
+                      <span className="text-nav text-[9px]">
                         {mode === "tetris" ? "Lines cleared" : "Length"}
                       </span>
-                      <b>
+                      <b className="font-display text-lg font-medium">
                         {String(
                           mode === "tetris"
                             ? engine.lines
@@ -671,8 +724,8 @@ export function App() {
                       </b>
                     </div>
                     <div>
-                      <span>Level</span>
-                      <b>
+                      <span className="text-nav text-[9px]">Level</span>
+                      <b className="font-display text-lg font-medium">
                         {String(1 + Math.floor(engine.lines / 10)).padStart(
                           2,
                           "0",
@@ -681,11 +734,11 @@ export function App() {
                     </div>
                   </div>
                   {mode === "tetris" && (
-                    <div className="next-piece">
-                      <span>Up next</span>
-                      <div>
+                    <div className="border-line mt-5 flex items-center gap-3 border-t pt-4 compact:gap-2">
+                      <span className="text-[10px] text-zinc-400">Up next</span>
+                      <div className="flex flex-col gap-1">
                         {shapes[engine.next].map((row, y) => (
-                          <div className="next-row" key={y}>
+                          <div className="flex gap-1" key={y}>
                             {row.map((v, x) => (
                               <i
                                 key={x}
@@ -699,21 +752,25 @@ export function App() {
                           </div>
                         ))}
                       </div>
-                      <small>KEEP STACKING</small>
+                      <small className="text-dim compact:hidden ml-auto text-[6px] tracking-widest">
+                        KEEP STACKING
+                      </small>
                     </div>
                   )}
                 </>
               ) : mode === "life" ? (
                 <>
-                  <div className="score">
+                  <div className="font-display compact:text-3xl flex items-baseline gap-3 text-4xl font-medium tracking-wide">
                     {engine.generation}
-                    <span>GENERATIONS</span>
+                    <span className="text-dim font-sans text-[7px] tracking-widest">
+                      GENERATIONS
+                    </span>
                   </div>
-                  <p className="muted">
+                  <p className="text-muted text-xs leading-5">
                     {engine.board.filter((c) => c.some(Boolean)).length} living
                     cells · Tap any pad to toggle a cell, even while running.
                   </p>
-                  <div className="paint-actions">
+                  <div className="grid grid-cols-2 gap-2 [&>button]:rounded-md [&>button]:border [&>button]:border-line [&>button]:px-1 [&>button]:py-2 [&>button]:text-[9px]">
                     <button
                       disabled={engine.running}
                       onClick={() => {
@@ -764,7 +821,7 @@ export function App() {
                       Restore start
                     </button>
                   </div>
-                  <p className="muted">
+                  <p className="text-muted text-xs leading-5">
                     A cell lives with 2 or 3 neighbors; an empty cell is born
                     with 3. Edges do not wrap. Adjacent pads share neighbors.
                   </p>
@@ -772,16 +829,16 @@ export function App() {
                 </>
               ) : mode === "lights" ? (
                 <>
-                  <div className="score">
+                  <div className="font-display compact:text-3xl flex items-baseline gap-3 text-4xl font-medium tracking-wide">
                     {engine.moves}
                     <span>MOVES</span>
                   </div>
-                  <p className="muted" role="status">
+                  <p className="text-muted text-xs leading-5" role="status">
                     {engine.over
                       ? "Solved! Every light is out. Press a pad to play again."
                       : `${engine.board.filter((c) => c.some(Boolean)).length} lights left · Turn them all off.`}
                   </p>
-                  <div className="paint-actions">
+                  <div className="grid grid-cols-2 gap-2 [&>button]:rounded-md [&>button]:border [&>button]:border-line [&>button]:px-1 [&>button]:py-2 [&>button]:text-[9px]">
                     <button
                       onClick={() => {
                         engine.newLightsPuzzle();
@@ -799,7 +856,7 @@ export function App() {
                       Retry puzzle
                     </button>
                   </div>
-                  <p className="muted">
+                  <p className="text-muted text-xs leading-5">
                     Press a cell to flip it and its up, down, left and right
                     neighbors. Every generated puzzle is solvable. Moves cross
                     pad boundaries.
@@ -807,11 +864,11 @@ export function App() {
                 </>
               ) : twoPlayerModes.includes(mode) ? (
                 <>
-                  <div className="segmented">
+                  <div className="bg-canvas flex gap-1 rounded-md p-1">
                     {(["ai", "human"] as const).map((kind) => (
                       <button
                         key={kind}
-                        className={engine.opponent === kind ? "active" : ""}
+                        className={`flex-1 rounded px-1 py-2 text-[9px] ${engine.opponent === kind ? "bg-selected text-lavender-text shadow" : "text-dim"}`}
                         onClick={() => {
                           engine.opponent = kind;
                           engine.reset();
@@ -823,9 +880,10 @@ export function App() {
                     ))}
                   </div>
                   {engine.opponent === "ai" && (
-                    <label>
+                    <label className="block text-[10px] text-zinc-400">
                       AI strength
                       <select
+                        className="border-line bg-surface my-2 w-full rounded-md border p-2.5 text-[11px] text-zinc-300"
                         value={engine.difficulty}
                         onChange={(e) => {
                           engine.difficulty = e.target.value as Difficulty;
@@ -838,36 +896,42 @@ export function App() {
                       </select>
                     </label>
                   )}
-                  <div className="stats">
+                  <div className="mt-4 flex gap-9">
                     <div>
-                      <span>
+                      <span className="text-nav text-[9px]">
                         Pink {mode === "tug" ? "rounds" : scoreNoun}
                         {engine.opponent === "ai" ? " · you" : ""}
                       </span>
-                      <b style={{ color: `rgb(${teams[0]})` }}>
+                      <b
+                        className="font-display text-lg font-medium"
+                        style={{ color: `rgb(${teams[0]})` }}
+                      >
                         {teamScores[0]}
                       </b>
                     </div>
                     <div>
-                      <span>
+                      <span className="text-nav text-[9px]">
                         Blue {mode === "tug" ? "rounds" : scoreNoun}
                         {engine.opponent === "ai" ? " · AI" : ""}
                       </span>
-                      <b style={{ color: `rgb(${teams[1]})` }}>
+                      <b
+                        className="font-display text-lg font-medium"
+                        style={{ color: `rgb(${teams[1]})` }}
+                      >
                         {teamScores[1]}
                       </b>
                     </div>
                   </div>
                   {duelModes.includes(mode) && (
                     <>
-                      <label className="range-label">
+                      <label className="mb-2 flex justify-between text-[10px] text-zinc-400 [&_b]:rounded [&_b]:bg-selected [&_b]:px-1.5 [&_b]:py-1 [&_b]:text-[9px] [&_b]:leading-none [&_b]:font-medium [&_b]:text-lavender-text">
                         Rope{" "}
                         <b>
                           {Math.round((engine.rope / engine.duelLength) * 100)}%
                           pink
                         </b>
                       </label>
-                      <div className="rope-track">
+                      <div className="mb-2 h-2.5 overflow-hidden rounded-full bg-blue-400/45">
                         <span
                           style={{
                             width: `${(engine.rope / engine.duelLength) * 100}%`,
@@ -876,10 +940,10 @@ export function App() {
                       </div>
                     </>
                   )}
-                  <p className="muted" role="status">
+                  <p className="text-muted text-xs leading-5" role="status">
                     {matchStatus}
                   </p>
-                  <div className="paint-actions">
+                  <div className="grid grid-cols-2 gap-2 [&>button]:rounded-md [&>button]:border [&>button]:border-line [&>button]:px-1 [&>button]:py-2 [&>button]:text-[9px]">
                     <button
                       onClick={() => {
                         engine.reset();
@@ -902,7 +966,7 @@ export function App() {
                         </button>
                       )}
                   </div>
-                  <p className="muted">
+                  <p className="text-muted text-xs leading-5">
                     {mode === "reversi"
                       ? "Pink starts. Dim cells show your legal moves; the pulsing cell is the last disc played. Passing is automatic when you have no move."
                       : mode === "connect"
@@ -914,10 +978,10 @@ export function App() {
                 </>
               ) : mode === "scroller" ? (
                 <>
-                  <label>
+                  <label className="block text-[10px] text-zinc-400">
                     Your message
                     <input
-                      className="text-input"
+                      className="border-line bg-surface my-2 w-full rounded-md border p-2.5 text-[11px] text-zinc-300"
                       value={text}
                       maxLength={160}
                       onChange={(e) => {
@@ -927,9 +991,10 @@ export function App() {
                       }}
                     />
                   </label>
-                  <label>
+                  <label className="block text-[10px] text-zinc-400">
                     Animation
                     <select
+                      className="border-line bg-surface my-2 w-full rounded-md border p-2.5 text-[11px] text-zinc-300"
                       onChange={(e) => {
                         engine.effect = e.target.value;
                         force();
@@ -941,16 +1006,18 @@ export function App() {
                       <option value="pulse">Color ripple</option>
                     </select>
                   </label>
-                  <small>A–Z, numbers and basic punctuation.</small>
+                  <small className="text-nav text-[9px]">
+                    A–Z, numbers and basic punctuation.
+                  </small>
                 </>
               ) : mode === "paint" ? (
                 <>
-                  <div className="swatches">
+                  <div className="mb-5 flex flex-wrap gap-2">
                     {[...palette, [0, 0, 0] as RGB].map((c, i) => (
                       <button
                         aria-label={i === 6 ? "Eraser" : `Color ${i + 1}`}
                         key={i}
-                        className={color === i ? "active" : ""}
+                        className={`size-6 rounded-full border-2 border-transparent ${color === i ? "outline-2 outline-offset-3 outline-white" : ""}`}
                         style={{ background: `rgb(${c})` }}
                         onClick={() => {
                           setColor(i);
@@ -959,7 +1026,7 @@ export function App() {
                       />
                     ))}
                   </div>
-                  <div className="paint-actions">
+                  <div className="grid grid-cols-2 gap-2 [&>button]:rounded-md [&>button]:border [&>button]:border-line [&>button]:px-1 [&>button]:py-2 [&>button]:text-[9px]">
                     <button
                       onClick={() => {
                         if (engine.frames.length >= 200) {
@@ -985,7 +1052,7 @@ export function App() {
                       {engine.playback ? "Edit pixels" : "▶ Play frames"}
                     </button>
                     <button onClick={exportFrames}>↓ Export JSON</button>
-                    <label className="file-button">
+                    <label className="border-line cursor-pointer rounded-md border px-1 py-2 text-center text-[9px]">
                       ↑ Import JSON
                       <input
                         type="file"
@@ -997,21 +1064,22 @@ export function App() {
                   {notice && <small role="status">{notice}</small>}
                 </>
               ) : (
-                <p className="muted">
+                <p className="text-muted text-xs leading-5">
                   An endless rainbow, flowing across your entire canvas. Try
                   adding more pads.
                 </p>
               )}
             </section>
-            <section className="control-card">
-              <div className="card-heading">
-                <h2>Set the mood</h2>
-                <span>☷</span>
+            <section className="border-line bg-card compact:p-4 wide:p-5 rounded-xl border p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xs font-semibold">Set the mood</h2>
+                <span className="text-dim text-base">☷</span>
               </div>
-              <label className="range-label">
+              <label className="mb-2 flex justify-between text-[10px] text-zinc-400 [&_b]:rounded [&_b]:bg-selected [&_b]:px-1.5 [&_b]:py-1 [&_b]:text-[9px] [&_b]:leading-none [&_b]:font-medium [&_b]:text-lavender-text">
                 Speed <b>{speed.toFixed(1)}×</b>
               </label>
               <input
+                className="my-3 block h-1 w-full cursor-pointer accent-lavender"
                 aria-label="Speed"
                 type="range"
                 min="0.25"
@@ -1023,14 +1091,15 @@ export function App() {
                   engine.speed = +e.target.value;
                 }}
               />
-              <div className="range-ends">
+              <div className="text-dim mt-2 mb-5 flex justify-between text-[8px] last:mb-0">
                 <span>Easy does it</span>
                 <span>Let’s go</span>
               </div>
-              <label className="range-label">
+              <label className="mb-2 flex justify-between text-[10px] text-zinc-400 [&_b]:rounded [&_b]:bg-selected [&_b]:px-1.5 [&_b]:py-1 [&_b]:text-[9px] [&_b]:leading-none [&_b]:font-medium [&_b]:text-lavender-text">
                 Brightness <b>{brightness}%</b>
               </label>
               <input
+                className="my-3 block h-1 w-full cursor-pointer accent-lavender"
                 aria-label="Brightness"
                 type="range"
                 min="0"
@@ -1038,19 +1107,20 @@ export function App() {
                 value={brightness}
                 onChange={(e) => setBrightness(+e.target.value)}
               />
-              <div className="range-ends">
+              <div className="text-dim mt-2 mb-5 flex justify-between text-[8px] last:mb-0">
                 <span>☼</span>
                 <span>☀</span>
               </div>
             </section>
-            <section className="control-card layout-card">
-              <div className="card-heading">
-                <h2>Your canvas</h2>
-                <span>▦</span>
+            <section className="border-line bg-card compact:col-span-full compact:p-4 wide:p-5 rounded-xl border p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xs font-semibold">Your canvas</h2>
+                <span className="text-dim text-base">▦</span>
               </div>
-              <label>
+              <label className="block text-[10px] text-zinc-400">
                 Connected pads{" "}
                 <select
+                  className="border-line bg-surface my-2 w-full rounded-md border p-2.5 text-[11px] text-zinc-300"
                   aria-label="Pad count"
                   value={count}
                   onChange={(e) => configure(mode, +e.target.value)}
@@ -1062,11 +1132,11 @@ export function App() {
                   ))}
                 </select>
               </label>
-              <div className="segmented">
+              <div className="bg-canvas flex gap-1 rounded-md p-1">
                 {["horizontal", "vertical"].map((l) => (
                   <button
                     key={l}
-                    className={layout === l ? "active" : ""}
+                    className={`flex-1 rounded px-1 py-2 text-[9px] ${layout === l ? "bg-selected text-lavender-text shadow" : "text-dim"}`}
                     onClick={() => configure(mode, count, l)}
                   >
                     {l === "horizontal" ? "▤" : "▥"}{" "}
@@ -1074,16 +1144,22 @@ export function App() {
                   </button>
                 ))}
               </div>
-              <p>
+              <p className="text-dim mt-3 text-[9px] leading-4">
                 More pads. More room to play.
                 <br />
                 Layout changes start a fresh canvas.
               </p>
-              <details>
-                <summary>LED output settings</summary>
+              <details className="text-nav mt-4 text-[9px]">
+                <summary className="cursor-pointer">
+                  LED output settings
+                </summary>
                 <label>
                   Output rate
-                  <select value={fps} onChange={(e) => setFps(+e.target.value)}>
+                  <select
+                    className="border-line bg-surface my-2 w-full rounded-md border p-2.5 text-[11px] text-zinc-300"
+                    value={fps}
+                    onChange={(e) => setFps(+e.target.value)}
+                  >
                     {[10, 20, 30, 60].map((n) => (
                       <option key={n} value={n}>
                         {n} fps
@@ -1091,7 +1167,7 @@ export function App() {
                     ))}
                   </select>
                 </label>
-                <label className="check">
+                <label className="flex items-center gap-2 text-[11px] text-zinc-300">
                   <input
                     type="checkbox"
                     checked={saturation}
@@ -1099,23 +1175,25 @@ export function App() {
                   />{" "}
                   Boost saturation
                 </label>
-                <small>
+                <small className="text-nav text-[9px]">
                   Application rate; hardware throughput is unverified.
                 </small>
               </details>
             </section>
           </aside>
         </div>
-        <section className="howto">
+        <section className="border-line bg-sidebar compact:p-4 mt-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border px-6 py-5">
           <div>
-            <span className="how-icon">⌘</span>
+            <span className="bg-surface text-nav flex size-9 items-center justify-center rounded-lg text-xl">
+              ⌘
+            </span>
             <div>
-              <h3>
+              <h3 className="mb-1 text-xs font-medium">
                 {mode === "paint"
                   ? "A tiny canvas for big ideas"
                   : "Get into the flow"}
               </h3>
-              <p>
+              <p className="text-dim text-[9px]">
                 {mode === "paint"
                   ? "Pick a color, click a pixel, save a frame. Repeat."
                   : mode === "life"
@@ -1129,54 +1207,81 @@ export function App() {
             </div>
           </div>
           {duel && (
-            <div className="key-guide">
+            <div className="flex flex-wrap items-center gap-4 laptop:gap-2">
               <span>
-                <kbd>A</kbd> Pink press
+                <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-zinc-300">
+                  A
+                </kbd>{" "}
+                Pink press
               </span>
               <span>
-                <kbd>L</kbd> Blue press
+                <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-zinc-300">
+                  L
+                </kbd>{" "}
+                Blue press
               </span>
               <span>
-                <kbd>P</kbd> Pause
+                <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-zinc-300">
+                  P
+                </kbd>{" "}
+                Pause
               </span>
             </div>
           )}
           {(mode === "tetris" || mode === "snake") && (
-            <div className="key-guide">
+            <div className="flex flex-wrap items-center gap-4 laptop:gap-2">
               <span>
-                <kbd>←</kbd>
-                <kbd>→</kbd> Move
+                <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-zinc-300">
+                  ←
+                </kbd>
+                <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-zinc-300">
+                  →
+                </kbd>{" "}
+                Move
               </span>
               <span>
-                <kbd>↑</kbd> {mode === "snake" ? "Up" : "Rotate"}
+                <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-zinc-300">
+                  ↑
+                </kbd>{" "}
+                {mode === "snake" ? "Up" : "Rotate"}
               </span>
               <span>
-                <kbd>↓</kbd> {mode === "snake" ? "Down" : "Soft drop"}
+                <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-zinc-300">
+                  ↓
+                </kbd>{" "}
+                {mode === "snake" ? "Down" : "Soft drop"}
               </span>
               {mode === "tetris" && (
                 <span>
-                  <kbd>space</kbd> Drop
+                  <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-zinc-300">
+                    space
+                  </kbd>{" "}
+                  Drop
                 </span>
               )}
               <span>
-                <kbd>P</kbd> Pause
+                <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-zinc-300">
+                  P
+                </kbd>{" "}
+                Pause
               </span>
             </div>
           )}
           {(mode === "tetris" || mode === "snake") && (
-            <p className="pad-help">
+            <p className="compact:pl-0 w-full pl-12">
               On the grid: top third = {mode === "snake" ? "up" : "rotate"},
               middle left / right = move, bottom third = down.
             </p>
           )}
         </section>
-        <footer>
-          <span>
-            <span className="green-dot" /> No hardware? No problem. The
-            simulator is always ready.
+        <footer className="text-dim flex justify-between gap-5 py-6 text-[8px]">
+          <span className="flex items-center gap-2">
+            <span className="bg-success inline-block size-1.5 shrink-0 rounded-full" />{" "}
+            No hardware? No problem. The simulator is always ready.
           </span>
-          <span>
-            BUILT FOR THE BLOOPPAD-MAXX <span className="footer-star">✳</span>
+          <span className="compact:hidden flex items-center gap-2 text-[7px] tracking-widest">
+            BUILT FOR THE BLOOPPAD-MAXX{" "}
+            <span className="text-lavender-text ml-1 text-xl">✳</span>
           </span>
         </footer>
       </main>
