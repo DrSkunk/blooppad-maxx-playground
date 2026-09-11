@@ -1098,3 +1098,22 @@ footer > span:last-child {
 .pixel.lit {
   background-image: none;
 }
+/* Keep all seven experiences reachable on compact screens. */
+@media (max-width: 650px) {
+  nav {
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 4px;
+  }
+  .navitem {
+    flex: 0 0 67px;
+  }
+}
+@media (min-width: 651px) and (max-height: 820px) {
+  .sidebar {
+    overflow-y: auto;
+  }
+  .sidebar-note {
+    margin-top: 24px;
+  }
+}

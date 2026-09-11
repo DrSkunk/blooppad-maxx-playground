@@ -33,6 +33,20 @@ const modes: {
     desc: "Follow your appetite. Collect the pink pixels and stay out of your own way.",
   },
   {
+    id: "life",
+    name: "Game of Life",
+    label: "LET IT GROW",
+    icon: "✣",
+    desc: "Plant a few pixels. Watch a world emerge. Build your own starting pattern and let it evolve.",
+  },
+  {
+    id: "lights",
+    name: "Lights Out",
+    label: "FIND THE SWITCH",
+    icon: "☷",
+    desc: "One press changes five lights. Turn them all off to solve the puzzle.",
+  },
+  {
     id: "rainbow",
     name: "Rainbow",
     label: "JUST GOOD WAVES",
@@ -171,7 +185,10 @@ export function App() {
         e.target.matches("input,textarea,select")
       )
         return;
-      if (keys[e.key]) {
+      if (
+        keys[e.key] &&
+        (engine.mode === "tetris" || engine.mode === "snake")
+      ) {
         e.preventDefault();
         if (!held.has(e.key)) {
           held.add(e.key);
@@ -191,7 +208,7 @@ export function App() {
           );
         }
       }
-      if (e.key.toLowerCase() === "p" && !e.repeat) {
+      if (e.key.toLowerCase() === "p" && !e.repeat && !engine.over) {
         engine.running = !engine.running;
         force();
       }
@@ -235,8 +252,10 @@ export function App() {
     force();
   }
   function toggle() {
-    if (engine.over) engine.reset();
-    engine.running = !engine.running;
+    if (engine.over) {
+      engine.reset();
+      engine.running = true;
+    } else engine.running = !engine.running;
     force();
   }
   function exportFrames() {
@@ -432,7 +451,13 @@ export function App() {
               <span>
                 <span className="green-dot" />
                 {engine.over
-                  ? "GAME OVER"
+                  ? mode === "lights"
+                    ? "SOLVED · PRESS A PAD"
+                    : engine.endingPhase === "flash"
+                      ? "GAME OVER"
+                      : engine.endingPhase === "score"
+                        ? "YOUR FINAL SCORE"
+                        : "PLAY AGAIN · PRESS A PAD"
                   : engine.running
                     ? "LIVE PREVIEW"
                     : "READY TO PLAY"}
@@ -540,7 +565,7 @@ export function App() {
               </button>
               <span className="transport-hint">
                 {engine.over
-                  ? "Nice run. Ready for another?"
+                  ? "Press a pad or Play again for another round."
                   : engine.running
                     ? "Make every pixel count."
                     : "Your next little obsession awaits."}
@@ -608,6 +633,108 @@ export function App() {
                       <small>KEEP STACKING</small>
                     </div>
                   )}
+                </>
+              ) : mode === "life" ? (
+                <>
+                  <div className="score">
+                    {engine.generation}
+                    <span>GENERATIONS</span>
+                  </div>
+                  <p className="muted">
+                    {engine.board.filter((c) => c.some(Boolean)).length} living
+                    cells · Tap any pad to toggle a cell, even while running.
+                  </p>
+                  <div className="paint-actions">
+                    <button
+                      disabled={engine.running}
+                      onClick={() => {
+                        engine.stepLife();
+                        force();
+                      }}
+                    >
+                      Step once
+                    </button>
+                    <button
+                      onClick={() => {
+                        engine.seedLife("glider");
+                        force();
+                      }}
+                    >
+                      Glider
+                    </button>
+                    <button
+                      onClick={() => {
+                        engine.seedLife("random");
+                        force();
+                      }}
+                    >
+                      Random seed
+                    </button>
+                    <button
+                      onClick={() => {
+                        engine.seedLife("clear");
+                        force();
+                      }}
+                    >
+                      Clear grid
+                    </button>
+                    <button
+                      onClick={() => {
+                        engine.saveStartingBoard();
+                        setNotice("Starting pattern saved.");
+                      }}
+                    >
+                      Save start
+                    </button>
+                    <button
+                      onClick={() => {
+                        engine.restoreStartingBoard();
+                        force();
+                      }}
+                    >
+                      Restore start
+                    </button>
+                  </div>
+                  <p className="muted">
+                    A cell lives with 2 or 3 neighbors; an empty cell is born
+                    with 3. Edges do not wrap. Adjacent pads share neighbors.
+                  </p>
+                  {notice && <small role="status">{notice}</small>}
+                </>
+              ) : mode === "lights" ? (
+                <>
+                  <div className="score">
+                    {engine.moves}
+                    <span>MOVES</span>
+                  </div>
+                  <p className="muted" role="status">
+                    {engine.over
+                      ? "Solved! Every light is out. Press a pad to play again."
+                      : `${engine.board.filter((c) => c.some(Boolean)).length} lights left · Turn them all off.`}
+                  </p>
+                  <div className="paint-actions">
+                    <button
+                      onClick={() => {
+                        engine.newLightsPuzzle();
+                        force();
+                      }}
+                    >
+                      New puzzle
+                    </button>
+                    <button
+                      onClick={() => {
+                        engine.restoreStartingBoard();
+                        force();
+                      }}
+                    >
+                      Retry puzzle
+                    </button>
+                  </div>
+                  <p className="muted">
+                    Press a cell to flip it and its up, down, left and right
+                    neighbors. Every generated puzzle is solvable. Moves cross
+                    pad boundaries.
+                  </p>
                 </>
               ) : mode === "scroller" ? (
                 <>
@@ -815,7 +942,11 @@ export function App() {
               <p>
                 {mode === "paint"
                   ? "Pick a color, click a pixel, save a frame. Repeat."
-                  : "Same controls on your screen and on your pad."}
+                  : mode === "life"
+                    ? "Toggle cells, save your start, then press Start demo. Pause to step one generation at a time."
+                    : mode === "lights"
+                      ? "Tap a light to flip its cross. Use Tab and Enter to play with a keyboard."
+                      : "Same controls on your screen and on your pad."}
               </p>
             </div>
           </div>

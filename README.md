@@ -22,8 +22,12 @@ npm test      # Node 22.6+; simulated protocol and engine tests
 - **Tetris:** seven tetrominoes, rotation with wall kicks, ghost landing preview, soft/hard drops, next piece, score, line clearing and increasing difficulty.
 - **Marquee:** editable scrolling text using a 5×7 font, plus rainbow waves and color ripples. Supports A–Z, digits, spaces and basic punctuation; other characters use a question-mark glyph.
 - **Snake:** food, growth, score and wall/self collision.
+- **Game of Life:** toggle cells directly on the simulator or hardware, even while running. Start/pause evolution, step a generation, load a glider or random seed, clear the grid, and save/restore a custom starting pattern. Uses Conway’s B3/S23 rules with non-wrapping edges; adjacent pads share neighbors.
+- **Lights Out:** press a cell to flip it and its four orthogonal neighbors. Turn all lights off to win. Tracks moves, generates solvable puzzles, supports retrying the same puzzle, and scrolls the result on the pads. Pause blocks moves; New puzzle and Reset generate another puzzle.
 - **Rainbow:** a continuous animated color field.
 - **Pixel studio:** paint or erase pixels, save up to 200 frames, play the sequence, import/export JSON. Export frames before resetting or changing modes/layouts; edits are held in memory.
+
+At the end of Tetris or Snake, a brief pink impact pulse expands across the pads, followed by a colorful `SCORE <total>` reveal and a gently pulsing `PLAY AGAIN` marquee. The score and replay prompt alternate across the simulator and connected pads, including multi-pad layouts. After the opening flash, press any pad or click Play again to restart; Reset and mode/layout changes also stop the animation. The final score stays in the score panel until restart.
 
 Use Start/Pause and Reset. Arrow keys move; Tetris uses Up to rotate, Down to soft drop and Space to hard drop. P toggles pause. Onscreen/hardware grid presses map the top third to Up, middle left/right to movement, and bottom third to Down. In Pixel studio, press a cell to paint; Enter also paints a focused cell. The app pauses on window blur.
 

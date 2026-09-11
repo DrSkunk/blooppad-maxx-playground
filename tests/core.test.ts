@@ -238,3 +238,253 @@ test("connection permission errors survive simulator animation frames", async ()
     if (original) Object.defineProperty(globalThis, "navigator", original);
   }
 });
+
+test("Tetris and Snake endings scroll the final score on every canvas size", () => {
+  for (const mode of ["tetris", "snake"] as const) {
+    for (const [width, height] of [
+      [8, 8],
+      [16, 8],
+      [8, 16],
+      [32, 8],
+      [8, 32],
+    ]) {
+      for (const score of [0, 120]) {
+        const e = new Engine();
+        e.configure(mode, width, height);
+        e.score = score;
+        e.running = true;
+        e.color = [0, 0, 0]; // Paint's eraser must not hide the score.
+        e.effect = "pulse"; // A prior marquee effect must not replace the text.
+        if (mode === "tetris") {
+          e.board = e.board.map(() => [255, 0, 0]);
+          e.spawn();
+        } else {
+          e.snake = [width - 1, width - 2, width - 3];
+          e.update(0.25);
+        }
+        assert.ok(e.over);
+        assert.equal(e.running, false);
+        const initial = e.render();
+        assert.ok(initial.some((c) => c.some(Boolean)));
+        const board = structuredClone(e.board);
+        const snake = [...e.snake];
+        e.action("drop");
+        e.update(0.5);
+        assert.notDeepEqual(e.render(), initial);
+        assert.equal(e.score, score);
+        assert.deepEqual(e.board, board);
+        assert.deepEqual(e.snake, snake);
+        assert.equal(e.render().length, width * height);
+        // After the label passes, check the numeric score against the font renderer.
+        e.update(4);
+        const expected = new Engine();
+        expected.configure("scroller", width, height);
+        expected.text = `SCORE ${score}`;
+        expected.color = [77, 221, 207];
+        expected.time = 3.6 + width / 8;
+        assert.deepEqual(
+          e.render().map((c) => c.some(Boolean)),
+          expected.render().map((c) => c.some(Boolean)),
+        );
+        e.reset();
+        assert.equal(e.over, false);
+        assert.equal(e.score, 0);
+        assert.equal(e.running, false);
+        e.configure("paint", width, height);
+        e.update(1);
+        assert.ok(e.render().every((c) => c.every((v) => v === 0)));
+      }
+    }
+  }
+});
+
+test("Snake completion also shows the winning score and sends animated LED frames", () => {
+  const e = new Engine();
+  e.configure("snake", 8, 8);
+  e.snake = Array.from({ length: 63 }, (_, i) => 62 - i);
+  e.food = 63;
+  e.score = 600;
+  e.running = true;
+  e.update(0.25);
+  assert.ok(e.over);
+  assert.equal(e.score, 610);
+  const { midi, output } = setup();
+  midi.send([e.render()]);
+  e.update(0.5);
+  midi.send([e.render()]);
+  assert.equal(output.sent.length, 2);
+  assert.equal(output.sent[0].length, 260);
+  assert.ok(output.sent[1].length > 4);
+  midi.dispose();
+});
+
+test("arcade ending progresses from impact to score to replay, loops, and accepts a pad restart", () => {
+  for (const mode of ["tetris", "snake"] as const) {
+    const e = new Engine();
+    e.configure(mode, 8, 8);
+    e.score = 120;
+    e.board = e.board.map(() => [255, 0, 0]);
+    e.spawn();
+    assert.equal(e.endingPhase, "flash");
+    e.onPad(0, 0, true);
+    e.onPad(0, 0, false);
+    assert.ok(e.over, "opening flash ignores accidental presses");
+    e.update(0.9);
+    assert.equal(e.endingPhase, "score");
+    const scoreFrame = e.render();
+    assert.ok(scoreFrame.some((c) => c.some(Boolean)));
+    assert.ok(
+      new Set(scoreFrame.filter((c) => c.some(Boolean)).map((c) => c.join(",")))
+        .size > 1,
+    );
+    e.update(("SCORE 120".length * 6) / 8);
+    assert.equal(e.endingPhase, "replay");
+    const prompt = new Engine();
+    prompt.configure("scroller", 8, 8);
+    prompt.text = "PLAY AGAIN";
+    prompt.time = 1;
+    assert.deepEqual(
+      e.render().map((c) => c.some(Boolean)),
+      prompt.render().map((c) => c.some(Boolean)),
+    );
+    const before = e.render();
+    e.update(0.05);
+    assert.notDeepEqual(
+      e.render(),
+      before,
+      "prompt pulses even before moving one pixel",
+    );
+    e.update(("PLAY AGAIN".length * 6) / 8 - 0.05);
+    assert.equal(e.endingPhase, "score");
+    assert.equal(e.score, 120);
+    e.onPad(3, 0, true);
+    assert.equal(e.over, false);
+    assert.equal(e.running, true);
+    assert.equal(e.score, 0);
+    const pieceX = e.px;
+    e.onPad(3, 0, true);
+    assert.equal(e.px, pieceX, "held restart pad does not also move a piece");
+  }
+});
+
+test("Life toggles deduplicated presses, evolves a blinker and restores a custom start", () => {
+  const e = new Engine();
+  e.configure("life", 8, 8);
+  for (const col of [2, 3, 4]) {
+    e.onPad(3, col, true);
+    e.onPad(3, col, true);
+    e.onPad(3, col, false);
+  }
+  assert.equal(e.board.filter((c) => c.some(Boolean)).length, 3);
+  e.saveStartingBoard();
+  const initial = structuredClone(e.board);
+  e.stepLife();
+  assert.equal(e.generation, 1);
+  assert.deepEqual(
+    e.board.flatMap((c, i) => (c.some(Boolean) ? [i] : [])),
+    [19, 27, 35],
+  );
+  e.stepLife();
+  assert.deepEqual(e.board, initial);
+  e.running = true;
+  e.update(0.6);
+  assert.equal(e.generation, 4);
+  e.restoreStartingBoard();
+  assert.equal(e.generation, 0);
+  assert.equal(e.running, false);
+  assert.deepEqual(e.board, initial);
+  e.onPad(3, 2, true);
+  e.onPad(3, 2, false);
+  assert.equal(e.board[26].some(Boolean), false);
+  e.seedLife("glider");
+  assert.equal(e.board.filter((c) => c.some(Boolean)).length, 5);
+  e.seedLife("clear");
+  assert.ok(e.board.every((c) => !c.some(Boolean)));
+});
+
+test("Life shares neighbors across pad seams and does not wrap outer edges", () => {
+  const e = new Engine();
+  e.configure("life", 16, 8);
+  for (const x of [6, 7, 8]) e.board[3 * 16 + x] = [77, 221, 207];
+  e.stepLife();
+  assert.deepEqual(
+    e.board.flatMap((c, i) => (c.some(Boolean) ? [i] : [])),
+    [39, 55, 71],
+  );
+  e.seedLife("clear");
+  for (const i of [15, 16, 31]) e.board[i] = [77, 221, 207];
+  e.stepLife();
+  assert.equal(e.board[0].some(Boolean), false);
+});
+
+test("Lights Out flips only a cross, counts once per press and detects a solved puzzle", () => {
+  const e = new Engine();
+  e.configure("lights", 16, 8);
+  e.board = e.blank();
+  e.onPad(3, 7, true);
+  e.onPad(3, 7, true);
+  e.onPad(3, 7, false);
+  assert.equal(e.moves, 1);
+  assert.deepEqual(
+    e.board.flatMap((c, i) => (c.some(Boolean) ? [i] : [])),
+    [39, 54, 55, 56, 71],
+  );
+  e.onPad(3, 7, true);
+  e.onPad(3, 7, false);
+  assert.equal(e.moves, 2);
+  assert.equal(e.over, true);
+  assert.equal(e.running, false);
+  assert.ok(e.render().some((c) => c.some(Boolean)));
+  e.reset();
+  e.board = e.blank();
+  e.onPad(0, 0, true);
+  e.onPad(0, 0, false);
+  assert.deepEqual(
+    e.board.flatMap((c, i) => (c.some(Boolean) ? [i] : [])),
+    [0, 1, 16],
+  );
+  e.running = false;
+  const before = structuredClone(e.board);
+  e.onPad(2, 2, true);
+  e.onPad(2, 2, false);
+  assert.deepEqual(e.board, before);
+});
+
+test("Lights Out generated puzzles are solved by replaying their scramble and retry restores them", () => {
+  const original = Math.random;
+  try {
+    for (const [width, height] of [
+      [8, 8],
+      [32, 8],
+      [8, 32],
+    ]) {
+      const e = new Engine();
+      e.configure("lights", width, height);
+      const values: number[] = [];
+      Math.random = () => {
+        const v = original();
+        values.push(v);
+        return v;
+      };
+      e.newLightsPuzzle();
+      Math.random = original;
+      const initial = structuredClone(e.board);
+      assert.ok(initial.some((c) => c.some(Boolean)));
+      for (let i = 0; i < values.length; i += 2) {
+        const r = Math.floor(values[i] * height),
+          c = Math.floor(values[i + 1] * width);
+        e.onPad(r, c, true);
+        e.onPad(r, c, false);
+        if (e.over) break;
+      }
+      assert.ok(e.over, "legal scramble can be reversed");
+      e.restoreStartingBoard();
+      assert.deepEqual(e.board, initial);
+      assert.equal(e.moves, 0);
+      assert.equal(e.over, false);
+      assert.equal(e.running, true);
+    }
+  } finally {
+    Math.random = original;
+  }
+});
