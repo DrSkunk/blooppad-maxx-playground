@@ -620,7 +620,11 @@ test("Connect four AI wins when it can and blocks when it must", () => {
   cells[height * width - 8] = 2;
   cells[height * width - 7] = 2;
   cells[height * width - 6] = 2;
-  assert.equal(connectBest(cells, width, height, 2, "hard"), 3, "takes the win");
+  assert.equal(
+    connectBest(cells, width, height, 2, "hard"),
+    3,
+    "takes the win",
+  );
   const threat = Array.from({ length: width * height }, () => 0);
   threat[height * width - 8] = 1;
   threat[height * width - 7] = 1;
@@ -656,8 +660,11 @@ test("Tug of war rewards the fastest light and punishes early or wrong presses",
   e.update(3);
   assert.equal(e.duelState, "go");
   const target = e.targets[0];
-  assert.ok(target >= 0 && target % 8 < 4, "pink lights up in the left half");
-  assert.ok(e.targets[1] % 8 >= 4, "blue lights up in the right half");
+  assert.ok(
+    target >= 0 && target % 8 < e.duelEdge,
+    "pink lights up in pink territory",
+  );
+  assert.ok(e.targets[1] % 8 >= e.duelEdge, "blue lights up in blue territory");
   assert.ok(e.render()[target].every((c) => c === 255));
   const wrong = target % 8 === 0 ? target + 1 : target - 1;
   e.onPad(Math.floor(wrong / 8), wrong % 8, true, "p1");
@@ -669,6 +676,22 @@ test("Tug of war rewards the fastest light and punishes early or wrong presses",
   assert.equal(e.rope, 3, "the correct light pulls the rope");
   assert.equal(e.rounds[0], 1);
   assert.ok((e.reactions[0] ?? 0) > 0);
+});
+test("Tug of war moves both target zones with the rope", () => {
+  const e = new Engine();
+  e.configure("tug", 8, 8);
+  e.opponent = "human";
+  e.rope = 6;
+  e.update(3);
+  assert.equal(e.duelState, "go");
+  assert.ok(e.targets[0] % 8 < 6, "pink target stays in pink territory");
+  assert.ok(e.targets[1] % 8 >= 6, "blue target stays in blue territory");
+  assert.equal(e.sideOf(3, 5), 1, "expanded pink territory routes to pink");
+  assert.equal(e.sideOf(3, 6), 2, "contracted blue territory routes to blue");
+  const blue = e.targets[1];
+  e.onPad(Math.floor(blue / 8), blue % 8, true, "p2");
+  assert.equal(e.rounds[1], 1);
+  assert.equal(e.rope, 5);
 });
 test("Tug of war AI reacts on its own, and reaching the edge ends the match", () => {
   const e = new Engine();
@@ -698,7 +721,10 @@ test("Button masher counts one press per release, drifts back and supports verti
   const start = e.rope;
   e.onPad(3, 1, true, "p1");
   e.onPad(3, 1, true, "p1");
-  assert.ok(Math.abs(e.rope - (start + 0.34)) < 1e-9, "held presses count once");
+  assert.ok(
+    Math.abs(e.rope - (start + 0.34)) < 1e-9,
+    "held presses count once",
+  );
   assert.equal(e.presses[0], 1);
   e.onPad(3, 1, false, "p1");
   e.onPad(3, 1, true, "p1");

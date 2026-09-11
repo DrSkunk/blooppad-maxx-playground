@@ -1,7 +1,14 @@
 /* The engine and MIDI adapter are mutable external services. The single scheduler publishes frames to React. */
 /* oxlint-disable react/immutability */
 import { useEffect, useState } from "react";
-import { Engine, duelModes, palette, shapes, teams, twoPlayerModes } from "./lib/engine";
+import {
+  Engine,
+  duelModes,
+  palette,
+  shapes,
+  teams,
+  twoPlayerModes,
+} from "./lib/engine";
 import type { Mode, RGB } from "./lib/engine";
 import type { Difficulty } from "./lib/games.ts";
 import { MidiAdapter } from "./lib/midi";
@@ -512,10 +519,10 @@ export function App() {
                     : twoPlayer
                       ? `${engine.winner === 3 ? "DRAW" : engine.winner === 1 ? "PINK WINS" : "BLUE WINS"} · PRESS A PAD`
                       : engine.endingPhase === "flash"
-                      ? "GAME OVER"
-                      : engine.endingPhase === "score"
-                        ? "YOUR FINAL SCORE"
-                        : "PLAY AGAIN · PRESS A PAD"
+                        ? "GAME OVER"
+                        : engine.endingPhase === "score"
+                          ? "YOUR FINAL SCORE"
+                          : "PLAY AGAIN · PRESS A PAD"
                   : engine.running
                     ? "LIVE PREVIEW"
                     : "READY TO PLAY"}
@@ -854,7 +861,11 @@ export function App() {
                   {duelModes.includes(mode) && (
                     <>
                       <label className="range-label">
-                        Rope <b>{Math.round((engine.rope / engine.duelLength) * 100)}% pink</b>
+                        Rope{" "}
+                        <b>
+                          {Math.round((engine.rope / engine.duelLength) * 100)}%
+                          pink
+                        </b>
                       </label>
                       <div className="rope-track">
                         <span
@@ -886,8 +897,8 @@ export function App() {
                             force();
                           }}
                         >
-                          AI plays {engine.aiSide === 1 ? "blue" : "pink"}
-                          {" "}instead
+                          AI plays {engine.aiSide === 1 ? "blue" : "pink"}{" "}
+                          instead
                         </button>
                       )}
                   </div>
@@ -897,7 +908,7 @@ export function App() {
                       : mode === "connect"
                         ? "Press any cell in a column to drop a disc there. Dim cells preview where it lands. Four in a row wins."
                         : mode === "tug"
-                          ? "Wait for the white light in your half, then hit it. Pressing early or hitting the wrong cell hands the round to your rival. Keyboard: A and L."
+                          ? "Wait for the white light in your colored territory, then hit it. Pressing early or hitting the wrong cell hands the round to your rival. Keyboard: A and L."
                           : "Mash any cell in your half. The rope drifts back to the middle, so keep going. Keyboard: A and L."}
                   </p>
                 </>

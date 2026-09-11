@@ -573,8 +573,11 @@ export class Engine {
   get duelLength() {
     return this.duelAxis === "x" ? this.width : this.height;
   }
+  get duelEdge() {
+    return Math.max(0, Math.min(this.duelLength, Math.round(this.rope)));
+  }
   sideOf(row: number, col: number): Player {
-    return (this.duelAxis === "x" ? col : row) < this.duelLength / 2 ? 1 : 2;
+    return (this.duelAxis === "x" ? col : row) < this.duelEdge ? 1 : 2;
   }
   get counts(): [number, number] {
     return reversiCount(this.cells);
@@ -598,8 +601,10 @@ export class Engine {
     this.held.clear();
   }
   private randomCell(side: Player) {
-    const half = Math.floor(this.duelLength / 2),
-      along = (side === 1 ? 0 : half) + Math.floor(Math.random() * half),
+    const edge = this.duelEdge,
+      start = side === 1 ? 0 : edge,
+      end = side === 1 ? edge : this.duelLength,
+      along = start + Math.floor(Math.random() * (end - start)),
       across = Math.floor(
         Math.random() * (this.duelAxis === "x" ? this.height : this.width),
       );
@@ -643,7 +648,10 @@ export class Engine {
       return;
     }
     this.reactions[side - 1] = this.goTime;
-    this.endRound(side, `${this.name(side)} pulls · ${this.goTime.toFixed(2)}s`);
+    this.endRound(
+      side,
+      `${this.name(side)} pulls · ${this.goTime.toFixed(2)}s`,
+    );
   }
   pressKey(side: Player) {
     this.press(side, this.mode === "tug" ? this.targets[side - 1] : -1);
@@ -915,8 +923,7 @@ export class Engine {
   }
   private renderDuel(): RGB[] {
     const f = this.blank(),
-      front = Math.max(0, Math.min(this.duelLength, this.rope)),
-      edge = Math.round(front);
+      edge = this.duelEdge;
     for (let y = 0; y < this.height; y++)
       for (let x = 0; x < this.width; x++) {
         const along = this.duelAxis === "x" ? x : y,
