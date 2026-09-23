@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { Engine } from "../src/lib/engine.ts";
+import { Engine, teams } from "../src/lib/engine.ts";
 import {
   connectBest,
   reversiApply,
@@ -10,6 +10,35 @@ import {
   reversiMoves,
 } from "../src/lib/games.ts";
 import { MidiAdapter, decode, encode } from "../src/lib/midi.ts";
+import { menuModeAt, renderDeviceMenu } from "../src/lib/deviceMenu.ts";
+
+test("device menu exposes only the three requested games on every pad", () => {
+  assert.deepEqual(teams[0], [255, 75, 75]);
+  assert.deepEqual(
+    Array.from({ length: 8 }, (_, row) => menuModeAt(row)),
+    ["tug", "tug", null, "connect", "connect", null, "tetris", "tetris"],
+  );
+  for (const [width, height] of [
+    [8, 8],
+    [16, 8],
+    [8, 16],
+  ]) {
+    const frame = renderDeviceMenu(width, height);
+    assert.equal(frame.length, width * height);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        assert.deepEqual(
+          frame[y * width + x],
+          frame[(y % 8) * width + (x % 8)],
+        );
+      }
+    }
+    assert.deepEqual(frame[2 * width], [0, 0, 0]);
+    assert.deepEqual(frame[5 * width], [0, 0, 0]);
+    assert.deepEqual(frame[0], teams[0]);
+    assert.deepEqual(frame[3 * width + 1], teams[1]);
+  }
+});
 
 test("exact SysEx bytes, corners, clamping, full frame and changed-cell batching", () => {
   const e = new Engine();
@@ -195,6 +224,7 @@ test("pad deduplication/release and all layouts render complete RGB canvases", (
 test("Snake eats, rejects reversal and ends at walls", () => {
   const e = new Engine();
   e.configure("snake", 8, 8);
+  e.snakeWrap = false;
   e.food = e.snake[0] + 1;
   e.running = true;
   e.action("left");
@@ -205,6 +235,41 @@ test("Snake eats, rejects reversal and ends at walls", () => {
   for (let i = 0; i < 10; i++) e.update(0.25);
   assert.ok(e.over);
   assert.equal(e.running, false);
+});
+test("Snake wraps across each outer edge by default and keeps the option across resets", () => {
+  const e = new Engine();
+  assert.equal(e.snakeWrap, true);
+  e.configure("snake", 16, 8);
+  for (const [head, direction, expected] of [
+    [0, [-1, 0], 15],
+    [15, [1, 0], 0],
+    [0, [0, -1], 112],
+    [112, [0, 1], 0],
+  ] as const) {
+    e.reset();
+    e.snake = [head];
+    e.direction = [...direction];
+    e.pending = [...direction];
+    e.food = 55;
+    e.running = true;
+    e.update(0.25);
+    assert.equal(e.snake[0], expected);
+    assert.equal(e.over, false);
+  }
+  e.snakeWrap = false;
+  e.reset();
+  e.configure("snake", 8, 8);
+  assert.equal(e.snakeWrap, false);
+});
+test("Snake checks self collision after wrapping", () => {
+  const e = new Engine();
+  e.configure("snake", 8, 8);
+  e.snake = [7, 0, 1];
+  e.food = 20;
+  e.running = true;
+  e.update(0.25);
+  assert.equal(e.over, true);
+  assert.deepEqual(e.snake, [7, 0, 1]);
 });
 test("text scrolls and paint frame playback uses saved frames", () => {
   const e = new Engine();
@@ -267,6 +332,7 @@ test("Tetris and Snake endings scroll the final score on every canvas size", () 
           e.board = e.board.map(() => [255, 0, 0]);
           e.spawn();
         } else {
+          e.snakeWrap = false;
           e.snake = [width - 1, width - 2, width - 3];
           e.update(0.25);
         }
@@ -535,7 +601,7 @@ test("Reversi passes a player with no move and scores the finished board", () =>
   assert.equal(e.over, true);
   assert.equal(e.winner, 1);
   assert.deepEqual(e.counts, [64, 0]);
-  assert.equal(e.resultText, "PINK WINS 64-0");
+  assert.equal(e.resultText, "RED WINS 64-0");
   assert.ok(
     e.render().some((c) => c.some(Boolean)) ||
       (e.update(0.4), e.render().some((c) => c.some(Boolean))),
@@ -598,7 +664,7 @@ test("Connect four stacks columns, detects lines and calls a draw", () => {
   assert.equal(e.over, true);
   assert.equal(e.winner, 1);
   assert.equal(e.winLine.length, 4);
-  assert.equal(e.resultText, "PINK WINS");
+  assert.equal(e.resultText, "RED WINS");
   const full = new Engine();
   full.configure("connect", 8, 8);
   full.opponent = "human";
@@ -654,7 +720,7 @@ test("Tug of war rewards the fastest light and punishes early or wrong presses",
   e.onPad(0, 0, true, "p1");
   assert.equal(e.rope, 3, "a false start hands the round to the rival");
   assert.equal(e.rounds[1], 1);
-  assert.match(e.message, /Pink/);
+  assert.match(e.message, /Red/);
   e.update(3);
   assert.equal(e.duelState, "countdown");
   e.update(3);
@@ -662,11 +728,11 @@ test("Tug of war rewards the fastest light and punishes early or wrong presses",
   const target = e.targets[0];
   assert.ok(
     target >= 0 && target % 8 < e.duelEdge,
-    "pink lights up in pink territory",
+    "red lights up in red territory",
   );
   assert.ok(e.targets[1] % 8 >= e.duelEdge, "blue lights up in blue territory");
   assert.ok(e.render()[target].every((c) => c === 255));
-  const wrong = target % 8 === 0 ? target + 1 : target - 1;
+  const wrong = target < 56 ? target + 8 : target - 8;
   e.onPad(Math.floor(wrong / 8), wrong % 8, true, "p1");
   assert.equal(e.rope, 2, "hitting the wrong light loses the round");
   e.update(3);
@@ -684,9 +750,9 @@ test("Tug of war moves both target zones with the rope", () => {
   e.rope = 6;
   e.update(3);
   assert.equal(e.duelState, "go");
-  assert.ok(e.targets[0] % 8 < 6, "pink target stays in pink territory");
+  assert.ok(e.targets[0] % 8 < 6, "red target stays in red territory");
   assert.ok(e.targets[1] % 8 >= 6, "blue target stays in blue territory");
-  assert.equal(e.sideOf(3, 5), 1, "expanded pink territory routes to pink");
+  assert.equal(e.sideOf(3, 5), 1, "expanded red territory routes to red");
   assert.equal(e.sideOf(3, 6), 2, "contracted blue territory routes to blue");
   const blue = e.targets[1];
   e.onPad(Math.floor(blue / 8), blue % 8, true, "p2");
@@ -710,7 +776,7 @@ test("Tug of war AI reacts on its own, and reaching the edge ends the match", ()
   e.onPad(Math.floor(e.targets[0] / 8), e.targets[0] % 8, true, "p1");
   assert.equal(e.over, true);
   assert.equal(e.winner, 1);
-  assert.equal(e.resultText, "PINK WINS");
+  assert.equal(e.resultText, "RED WINS");
 });
 test("Button masher counts one press per release, drifts back and supports vertical halves", () => {
   const e = new Engine();

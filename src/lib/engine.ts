@@ -27,9 +27,9 @@ export type Mode =
   | "masher";
 export const duelModes: Mode[] = ["tug", "masher"];
 export const twoPlayerModes: Mode[] = ["reversi", "connect", "tug", "masher"];
-/* Player one is pink, player two is blue, everywhere on screen and on the pads. */
+/* Player one is red, player two is blue, everywhere on screen and on the pads. */
 export const teams: RGB[] = [
-  [255, 104, 139],
+  [255, 75, 75],
   [103, 153, 255],
 ];
 export const palette: RGB[] = [
@@ -137,6 +137,7 @@ export class Engine {
   pieceColor = palette[0];
   next = 0;
   snake: number[] = [];
+  snakeWrap = true;
   direction = [1, 0];
   pending = [1, 0];
   food = 0;
@@ -507,7 +508,7 @@ export class Engine {
       return;
     }
     this.passes++;
-    this.message = `${this.turn === 1 ? "Pink" : "Blue"} has no legal move and passes.`;
+    this.message = `${this.turn === 1 ? "Red" : "Blue"} has no legal move and passes.`;
     this.turn = other(this.turn);
     this.legal = waiting;
   }
@@ -657,7 +658,7 @@ export class Engine {
     this.press(side, this.mode === "tug" ? this.targets[side - 1] : -1);
   }
   private name(side: Player) {
-    return side === 1 ? "Pink" : "Blue";
+    return side === 1 ? "Red" : "Blue";
   }
   private endRound(winner: Player, message: string) {
     this.roundWinner = winner;
@@ -750,8 +751,10 @@ export class Engine {
     if (this.mode === "snake" && this.tick >= 0.23) {
       this.tick = 0;
       this.direction = this.pending;
-      const x = (this.snake[0] % this.width) + this.direction[0],
-        y = Math.floor(this.snake[0] / this.width) + this.direction[1],
+      const nextX = (this.snake[0] % this.width) + this.direction[0],
+        nextY = Math.floor(this.snake[0] / this.width) + this.direction[1],
+        x = this.snakeWrap ? (nextX + this.width) % this.width : nextX,
+        y = this.snakeWrap ? (nextY + this.height) % this.height : nextY,
         n = y * this.width + x,
         eat = n === this.food;
       if (
@@ -797,16 +800,9 @@ export class Engine {
     if (duelModes.includes(this.mode)) return this.renderDuel();
     const f = this.board.map((c) => [...c] as RGB);
     if (this.mode === "tetris") {
-      let gy = this.py;
-      while (this.fits(this.px, gy + 1, this.piece)) gy++;
       this.piece.forEach((r, y) =>
         r.forEach((v, x) => {
-          if (v) {
-            f[(gy + y) * this.width + this.px + x] = this.pieceColor.map((c) =>
-              Math.round(c * 0.17),
-            ) as RGB;
-            f[(this.py + y) * this.width + this.px + x] = this.pieceColor;
-          }
+          if (v) f[(this.py + y) * this.width + this.px + x] = this.pieceColor;
         }),
       );
     }
@@ -888,7 +884,7 @@ export class Engine {
   }
   get resultText() {
     if (this.winner === 3) return "DRAW";
-    const name = this.winner === 1 ? "PINK" : "BLUE";
+    const name = this.winner === 1 ? "RED" : "BLUE";
     if (this.mode === "reversi") {
       const [one, two] = this.counts;
       return `${name} WINS ${Math.max(one, two)}-${Math.min(one, two)}`;
@@ -900,13 +896,13 @@ export class Engine {
     const human = this.opponent === "human" || this.turn !== this.aiSide;
     if (this.mode === "reversi" && human)
       for (const index of this.legal.keys())
-        f[index] = teams[this.turn - 1].map((c) => Math.round(c * 0.14)) as RGB;
+        f[index] = teams[this.turn - 1].map((c) => Math.round(c * 0.48)) as RGB;
     if (this.mode === "connect" && human)
       for (let column = 0; column < this.width; column++) {
         const index = connectDrop(this.cells, this.width, this.height, column);
         if (index >= 0)
           f[index] = teams[this.turn - 1].map((c) =>
-            Math.round(c * 0.14),
+            Math.round(c * 0.48),
           ) as RGB;
       }
     this.cells.forEach((cell, i) => {
@@ -929,7 +925,7 @@ export class Engine {
         const along = this.duelAxis === "x" ? x : y,
           mine = along < edge,
           border = along === edge - 1 || along === edge,
-          scale = border ? 0.8 : 0.2;
+          scale = border ? 0.9 : 0.42;
         f[y * this.width + x] = teams[mine ? 0 : 1].map((c) =>
           Math.round(c * scale),
         ) as RGB;

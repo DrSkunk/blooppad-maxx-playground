@@ -1,6 +1,6 @@
 /* The engine and MIDI adapter are mutable external services. The single scheduler publishes frames to React. */
 /* oxlint-disable react/immutability */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Engine,
   duelModes,
@@ -13,6 +13,7 @@ import type { Mode, RGB } from "./lib/engine";
 import type { Difficulty } from "./lib/games.ts";
 import { MidiAdapter } from "./lib/midi";
 import { FirmwareFlasher } from "./components/FirmwareFlasher";
+import { menuModeAt, renderDeviceMenu } from "./lib/deviceMenu";
 const modes: {
   id: Mode;
   name: string;
@@ -114,7 +115,11 @@ export function App() {
     [notice, setNotice] = useState(""),
     [text, setText] = useState("HELLO BLOOP!"),
     [color, setColor] = useState(0),
-    [orientation, setOrientation] = useState(false);
+    [orientation, setOrientation] = useState(false),
+    [menuOpen, setMenuOpen] = useState(false);
+  const menuOpenRef = useRef(false);
+  const menuShownOnConnect = useRef(false);
+  const menuCorners = useRef(new Set<string>());
   const [settings] = useState(() => ({
     count,
     layout,
@@ -138,14 +143,15 @@ export function App() {
     () =>
       new MidiAdapter(
         (slot, r, c, p) => {
-          engine.onPad(
-            r + (settings.layout === "vertical" ? slot * 8 : 0),
-            c + (settings.layout === "horizontal" ? slot * 8 : 0),
-            p,
-            "hardware",
-          );
+          onDevicePad(slot, r, c, p, "hardware");
         },
-        () => refresh((n) => n + 1),
+        () => {
+          if (midi.status === "Connected" && !menuShownOnConnect.current) {
+            menuShownOnConnect.current = true;
+            openMenu();
+          }
+          refresh((n) => n + 1);
+        },
       ),
   );
   useEffect(() => {
@@ -159,7 +165,9 @@ export function App() {
       if (now - sent >= 1000 / settings.fps) {
         sent = now;
         const s = settings;
-        let raw = engine.render();
+        let raw = menuOpenRef.current
+          ? renderDeviceMenu(engine.width, engine.height)
+          : engine.render();
         if (s.orientation) {
           raw = engine.blank();
           for (let p = 0; p < s.count; p++) {
@@ -218,6 +226,10 @@ export function App() {
     };
     const held = new Set<string>();
     const down = (e: KeyboardEvent) => {
+      if (menuOpenRef.current) {
+        if (e.key === "Escape") closeMenu();
+        return;
+      }
       if (
         e.target instanceof HTMLElement &&
         e.target.matches("input,textarea,select")
@@ -280,6 +292,9 @@ export function App() {
     };
   }, [engine, midi, settings]);
   function configure(m: Mode, n = count, l = layout) {
+    menuOpenRef.current = false;
+    setMenuOpen(false);
+    menuCorners.current.clear();
     midi.release();
     Object.assign(settings, { count: n, layout: l });
     setMode(m);
@@ -294,6 +309,61 @@ export function App() {
     setOrientation(false);
     setNotice("");
     force();
+  }
+  function openMenu() {
+    engine.running = false;
+    engine.held.clear();
+    menuCorners.current.clear();
+    menuOpenRef.current = true;
+    setMenuOpen(true);
+    setOrientation(false);
+    force();
+  }
+  function closeMenu() {
+    menuOpenRef.current = false;
+    setMenuOpen(false);
+    force();
+  }
+  function onDevicePad(
+    slot: number,
+    row: number,
+    col: number,
+    pressed: boolean,
+    source: string,
+  ) {
+    const corner = `${source}:${slot}:${col}`;
+    if (row === 0 && (col === 0 || col === 7)) {
+      if (pressed) menuCorners.current.add(corner);
+      else menuCorners.current.delete(corner);
+    }
+    if (menuOpenRef.current) {
+      if (pressed) {
+        const selected = menuModeAt(row);
+        if (selected) {
+          engine.opponent = "human";
+          configure(selected, settings.count, settings.layout);
+          engine.running = true;
+          force();
+        }
+      }
+      return;
+    }
+    if (
+      pressed &&
+      row === 0 &&
+      (col === 0 || col === 7) &&
+      menuCorners.current.has(`${source}:${slot}:0`) &&
+      menuCorners.current.has(`${source}:${slot}:7`)
+    ) {
+      openMenu();
+      return;
+    }
+    engine.onPad(
+      row + (settings.layout === "vertical" ? slot * 8 : 0),
+      col + (settings.layout === "horizontal" ? slot * 8 : 0),
+      pressed,
+      source,
+    );
   }
   function toggle() {
     if (engine.over) {
@@ -370,10 +440,10 @@ export function App() {
       : engine.over
         ? engine.winner === 3
           ? "A perfect draw. Press a pad to play again."
-          : `${engine.winner === 1 ? "Pink" : "Blue"} wins! Press a pad to play again.`
+          : `${engine.winner === 1 ? "Red" : "Blue"} wins! Press a pad to play again.`
         : duel
           ? engine.message
-          : `${engine.turn === 1 ? "Pink" : "Blue"} to move${
+          : `${engine.turn === 1 ? "Red" : "Blue"} to move${
               engine.opponent === "ai" && engine.turn === engine.aiSide
                 ? " · AI is thinking…"
                 : ""
@@ -471,11 +541,13 @@ export function App() {
               LET’S PLAY WITH PIXELS
             </div>
             <h1 className="font-display compact:text-4xl tablet:text-[40px] my-2 text-5xl leading-tight font-semibold tracking-tight">
-              {current.name}
+              {menuOpen ? "Game menu" : current.name}
               <span className="text-lavender">.</span>
             </h1>
             <p className="text-muted compact:text-[11px] max-w-lg text-xs leading-5 laptop:max-w-md">
-              {current.desc}
+              {menuOpen
+                ? "Tap the red, blue or amber band on any pad to start a game. Press both top corners together to reopen this menu."
+                : current.desc}
             </p>
           </div>
           <span className="border-line laptop:hidden flex items-center gap-2 whitespace-nowrap rounded-md border px-2.5 py-2 text-[8px] tracking-widest">
@@ -559,11 +631,13 @@ export function App() {
             <div className="border-line-soft text-nav flex h-13 items-center justify-between border-b px-5 text-[8px] tracking-widest">
               <span className="flex items-center gap-2">
                 <span className="bg-success size-1.5 rounded-full" />
-                {engine.over
+                {menuOpen
+                  ? "GAME MENU · TAP A GAME"
+                  : engine.over
                   ? mode === "lights"
                     ? "SOLVED · PRESS A PAD"
                     : twoPlayer
-                      ? `${engine.winner === 3 ? "DRAW" : engine.winner === 1 ? "PINK WINS" : "BLUE WINS"} · PRESS A PAD`
+                      ? `${engine.winner === 3 ? "DRAW" : engine.winner === 1 ? "RED WINS" : "BLUE WINS"} · PRESS A PAD`
                       : engine.endingPhase === "flash"
                         ? "GAME OVER"
                         : engine.endingPhase === "score"
@@ -597,17 +671,24 @@ export function App() {
                     <div className="bg-canvas border-pad absolute top-2.5 right-2.5 size-1 rounded-full border" />
                     <div className="bg-canvas border-black grid grid-cols-8 gap-2 rounded-lg border p-2 shadow-inner compact:has-[.pixel]:gap-1 laptop:gap-1 laptop:p-2 wide:gap-2">
                       {Array.from({ length: 64 }, (_, i) => {
-                        const row =
-                            Math.floor(i / 8) +
+                        const localRow = Math.floor(i / 8),
+                          localCol = i % 8,
+                          row =
+                            localRow +
                             (layout === "vertical" ? p * 8 : 0),
-                          col = (i % 8) + (layout === "horizontal" ? p * 8 : 0),
+                          col = localCol + (layout === "horizontal" ? p * 8 : 0),
                           rgb = frame[row * engine.width + col] ?? [0, 0, 0],
-                          lit = rgb.some(Boolean);
+                          lit = rgb.some(Boolean),
+                          menuChoice = menuOpen ? menuModeAt(localRow) : null;
                         return (
                           <button
                             key={i}
                             className={`pixel aspect-square min-w-0 touch-none rounded-sm border border-white/5 p-0 transition hover:brightness-140 hover:outline hover:outline-lavender active:scale-90 ${lit ? "lit" : ""}`}
-                            aria-label={`Pad ${p + 1}, row ${Math.floor(i / 8) + 1}, column ${(i % 8) + 1}`}
+                            aria-label={
+                              menuChoice
+                                ? `Select ${modes.find((m) => m.id === menuChoice)?.name} on pad ${p + 1}`
+                                : `Pad ${p + 1}, row ${localRow + 1}, column ${localCol + 1}`
+                            }
                             style={
                               lit
                                 ? {
@@ -619,25 +700,25 @@ export function App() {
                             onPointerDown={(e) => {
                               e.preventDefault();
                               e.currentTarget.setPointerCapture(e.pointerId);
-                              engine.onPad(row, col, true, "pointer");
+                              onDevicePad(p, localRow, localCol, true, "pointer");
                             }}
                             onPointerUp={() =>
-                              engine.onPad(row, col, false, "pointer")
+                              onDevicePad(p, localRow, localCol, false, "pointer")
                             }
                             onPointerCancel={() =>
-                              engine.onPad(row, col, false, "pointer")
+                              onDevicePad(p, localRow, localCol, false, "pointer")
                             }
                             onLostPointerCapture={() =>
-                              engine.onPad(row, col, false, "pointer")
+                              onDevicePad(p, localRow, localCol, false, "pointer")
                             }
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
                                 e.preventDefault();
-                                engine.onPad(row, col, true, "button");
+                                onDevicePad(p, localRow, localCol, true, "button");
                               }
                             }}
                             onKeyUp={() =>
-                              engine.onPad(row, col, false, "button")
+                              onDevicePad(p, localRow, localCol, false, "button")
                             }
                           />
                         );
@@ -658,18 +739,27 @@ export function App() {
                 ))}
               </div>
             </div>
-            <div className="text-dim compact:text-[7px] laptop:text-[7px] mx-3 mt-1 mb-7 flex flex-wrap items-center justify-center gap-2 text-[9px]">
-              <span className="text-sm text-zinc-400">↖</span> Click the pads or
-              use your keyboard{" "}
-              <span className="bg-dim mx-1 size-1 rounded-full" />{" "}
-              {midi?.status === "Connected"
-                ? "SCREEN + HARDWARE IN SYNC"
-                : "HARDWARE OPTIONAL"}
-            </div>
+            {menuOpen ? (
+              <div className="text-nav mx-3 mt-2 mb-7 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[10px]">
+                <span style={{ color: `rgb(${teams[0]})` }}>Top: Tug of war · 2 players</span>
+                <span className="text-[#6799ff]">Middle: Connect four · 2 players</span>
+                <span className="text-[#ffb74d]">Bottom: Tetris</span>
+              </div>
+            ) : (
+              <div className="text-dim compact:text-[7px] laptop:text-[7px] mx-3 mt-1 mb-7 flex flex-wrap items-center justify-center gap-2 text-[9px]">
+                <span className="text-sm text-zinc-400">↖</span> Click the pads or
+                use your keyboard{" "}
+                <span className="bg-dim mx-1 size-1 rounded-full" />{" "}
+                {midi?.status === "Connected"
+                  ? "SCREEN + HARDWARE IN SYNC"
+                  : "HARDWARE OPTIONAL"}
+              </div>
+            )}
             <div className="border-line flex items-center gap-2.5 border-t px-6 py-4">
               <button
                 className="bg-lavender text-selected hover:bg-lavender-hover rounded-md px-5 py-3 text-xs font-bold whitespace-nowrap"
                 onClick={toggle}
+                disabled={menuOpen}
               >
                 {engine.running
                   ? "Ⅱ Pause"
@@ -682,6 +772,7 @@ export function App() {
               </button>
               <button
                 className="border-line flex items-center gap-2 rounded-md border px-3 py-2 text-lg"
+                disabled={menuOpen}
                 onClick={() => {
                   engine.reset();
                   force();
@@ -689,8 +780,19 @@ export function App() {
               >
                 ↻ <span className="text-[11px]">Reset</span>
               </button>
+              <button
+                className="border-line rounded-md border px-3 py-2 text-[11px]"
+                onClick={() => {
+                  if (menuOpen) closeMenu();
+                  else openMenu();
+                }}
+              >
+                {menuOpen ? "Close menu" : "Game menu"}
+              </button>
               <span className="text-dim laptop:hidden ml-auto max-w-25 text-[9px] leading-4">
-                {engine.over
+                {menuOpen
+                  ? "Tap a colored row to choose."
+                  : engine.over
                   ? "Press a pad or Play again for another round."
                   : engine.running
                     ? "Make every pixel count."
@@ -702,7 +804,9 @@ export function App() {
             <section className="border-line bg-card compact:p-4 wide:p-5 rounded-xl border p-5">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xs font-semibold">
-                  {mode === "tetris" || mode === "snake"
+                  {menuOpen
+                    ? "Choose a game"
+                    : mode === "tetris" || mode === "snake"
                     ? "The score"
                     : twoPlayer
                       ? "The match"
@@ -710,7 +814,17 @@ export function App() {
                 </h2>
                 <span className="text-dim text-base">↗</span>
               </div>
-              {mode === "tetris" || mode === "snake" ? (
+              {menuOpen ? (
+                <div className="space-y-3 text-xs leading-5">
+                  <p style={{ color: `rgb(${teams[0]})` }}>Top · Tug of war · 2 players</p>
+                  <p className="text-[#6799ff]">Middle · Connect four · 2 players</p>
+                  <p className="text-[#ffb74d]">Bottom · Tetris</p>
+                  <p className="text-muted border-line border-t pt-3 text-[10px]">
+                    Tap any lit row on the pad. Press both top corners together
+                    to open this menu during a game.
+                  </p>
+                </div>
+              ) : mode === "tetris" || mode === "snake" ? (
                 <>
                   <div className="font-display compact:text-3xl flex items-baseline gap-3 text-4xl font-medium tracking-wide">
                     {String(engine.score).padStart(4, "0")}
@@ -741,6 +855,19 @@ export function App() {
                       </b>
                     </div>
                   </div>
+                  {mode === "snake" && (
+                    <label className="border-line mt-5 flex items-center gap-2 border-t pt-4 text-[11px] text-zinc-300">
+                      <input
+                        type="checkbox"
+                        checked={engine.snakeWrap}
+                        onChange={(e) => {
+                          engine.snakeWrap = e.target.checked;
+                          force();
+                        }}
+                      />
+                      Wrap around edges
+                    </label>
+                  )}
                   {mode === "tetris" && (
                     <div className="border-line mt-5 flex items-center gap-3 border-t pt-4 compact:gap-2">
                       <span className="text-[10px] text-zinc-400">Up next</span>
@@ -907,7 +1034,7 @@ export function App() {
                   <div className="mt-4 flex gap-9">
                     <div>
                       <span className="text-nav text-[9px]">
-                        Pink {mode === "tug" ? "rounds" : scoreNoun}
+                        Red {mode === "tug" ? "rounds" : scoreNoun}
                         {engine.opponent === "ai" ? " · you" : ""}
                       </span>
                       <b
@@ -936,7 +1063,7 @@ export function App() {
                         Rope{" "}
                         <b>
                           {Math.round((engine.rope / engine.duelLength) * 100)}%
-                          pink
+                          red
                         </b>
                       </label>
                       <div className="mb-2 h-2.5 overflow-hidden rounded-full bg-blue-400/45">
@@ -969,14 +1096,14 @@ export function App() {
                             force();
                           }}
                         >
-                          AI plays {engine.aiSide === 1 ? "blue" : "pink"}{" "}
+                          AI plays {engine.aiSide === 1 ? "blue" : "red"}{" "}
                           instead
                         </button>
                       )}
                   </div>
                   <p className="text-muted text-xs leading-5">
                     {mode === "reversi"
-                      ? "Pink starts. Dim cells show your legal moves; the pulsing cell is the last disc played. Passing is automatic when you have no move."
+                      ? "Red starts. Dim cells show your legal moves; the pulsing cell is the last disc played. Passing is automatic when you have no move."
                       : mode === "connect"
                         ? "Press any cell in a column to drop a disc there. Dim cells preview where it lands. Four in a row wins."
                         : mode === "tug"
@@ -1220,7 +1347,7 @@ export function App() {
                 <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-zinc-300">
                   A
                 </kbd>{" "}
-                Pink press
+                Red press
               </span>
               <span>
                 <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-zinc-300">
