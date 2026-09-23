@@ -12,6 +12,7 @@ import {
 import type { Mode, RGB } from "./lib/engine";
 import type { Difficulty } from "./lib/games.ts";
 import { MidiAdapter } from "./lib/midi";
+import { FirmwareFlasher } from "./components/FirmwareFlasher";
 const modes: {
   id: Mode;
   name: string;
@@ -109,6 +110,7 @@ export function App() {
     [frame, setFrame] = useState<RGB[]>(engine.render()),
     [, refresh] = useState(0),
     [devices, setDevices] = useState(false),
+    [flasher, setFlasher] = useState(false),
     [notice, setNotice] = useState(""),
     [text, setText] = useState("HELLO BLOOP!"),
     [color, setColor] = useState(0),
@@ -443,19 +445,24 @@ export function App() {
             <span className="compact:mx-2 mx-4 text-zinc-600">/</span>{" "}
             <b className="font-medium text-zinc-300">{current.name}</b>
           </div>
-          <button
-            className="border-line bg-surface compact:px-2 compact:py-2 flex items-center gap-2.5 rounded-lg border px-4 py-2.5 text-[11px] compact:text-[10px]"
-            onClick={() => {
-              setDevices(!devices);
-              if (!midi?.access) void midi?.connect();
-            }}
-          >
-            <span>♧</span>{" "}
-            {midi?.status === "Connected"
-              ? "Manage devices"
-              : "Connect BLOOPPAD"}{" "}
-            <span>↗</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              className="border-line bg-surface compact:px-2 compact:py-2 rounded-lg border px-4 py-2.5 text-[11px] compact:text-[10px]"
+              onClick={() => setFlasher(!flasher)}
+              aria-expanded={flasher}
+            >Flash firmware</button>
+            <button
+              className="border-line bg-surface compact:px-2 compact:py-2 flex items-center gap-2.5 rounded-lg border px-4 py-2.5 text-[11px] compact:text-[10px]"
+              onClick={() => {
+                setDevices(!devices);
+                if (!midi?.access) void midi?.connect();
+              }}
+            >
+              <span>♧</span>{" "}
+              {midi?.status === "Connected" ? "Manage devices" : "Connect BLOOPPAD"}{" "}
+              <span>↗</span>
+            </button>
+          </div>
         </header>
         <section className="compact:py-7 wide:py-10 flex items-center justify-between py-8">
           <div>
@@ -478,6 +485,7 @@ export function App() {
               : "SIMULATOR MODE"}
           </span>
         </section>
+        {flasher && <FirmwareFlasher onClose={() => setFlasher(false)} />}
         {!devices && midi.error && (
           <div
             className="border-device bg-device-bg mb-5 rounded-xl border p-5 text-xs"

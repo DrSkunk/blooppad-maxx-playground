@@ -30,6 +30,8 @@ jobs:
       - name: Test
         run: npm test
       - name: Build
+        env:
+          VITE_FIRMWARE_PROXY_ORIGIN: ${{ vars.FIRMWARE_PROXY_ORIGIN }}
         run: npm run build
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

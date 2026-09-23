@@ -11,6 +11,14 @@ npm run dev
 
 Open the localhost URL printed by Vite. Use a Chromium browser on HTTPS or localhost for Web MIDI. Click **Connect BLOOPPAD** to request MIDI SysEx permission.
 
+## Flash firmware
+
+Click **Flash firmware** to install an official release or a local `.bin` file. Disconnect the pad, hold its board boot button while reconnecting USB, then select the WCH bootloader when prompted. The app checks for the CH32X035G8U6 ISP ID before writing and verifies the flash after installation. WebUSB requires a compatible browser on HTTPS or localhost. On Windows, the bootloader may require a WinUSB driver.
+
+Published versions are listed live from the [BLOOPPAD-MAXX GitHub releases API](https://github.com/phyx-be/BLOOPPAD-MAXX/releases). The browser verifies each downloaded binary against GitHub's release size and SHA-256 digest. GitHub's binary host does not allow the browser to read release assets across origins, so a narrow Vercel Function in `proxy/api/firmware.ts` retrieves only official `firmware.bin` assets by ID. Firmware is not bundled with the site. Local files never leave the browser.
+
+The proxy is deployed at `https://blooppad-maxx-firmware-proxy.vercel.app` from the `proxy/` directory. The GitHub Actions repository variable `FIRMWARE_PROXY_ORIGIN` points to this origin; the Pages build passes it to Vite as `VITE_FIRMWARE_PROXY_ORIGIN`. For local development, add `VITE_FIRMWARE_PROXY_ORIGIN=http://localhost:3000` to `.env.local` and run `vercel dev` from `proxy/` alongside the Vite dev server. The Vercel Function accepts requests from `https://drskunk.github.io` and local Vite on port 5173. No GitHub token is needed for the public releases.
+
 ```sh
 npm run build  # TypeScript + production bundle
 npm run lint
@@ -45,7 +53,7 @@ Use the corner test to verify orientation: top-left red, top-right green, bottom
 - `src/lib/midi.ts`: independent Web MIDI adapter, explicit assignments, hotplug/listener cleanup, held-state deduplication and releases, successful-send-only caching and error reporting.
 - `src/App.tsx`: one animation scheduler, simulator/input routing, UI, brightness/saturation and per-pad frame slicing.
 
-Protocol follows the supplied integration guide and `~/github.com/Fri3dCamp/fri3d-scratcher/src/lib/midi.ts`. Inputs accept only `B0 address value`; button coordinates are the address nibbles. LEDs use `F0 13 37 [address R G B]… F7`, with address `(row << 4) | (8 + column)` and 8-bit channels clamped then shifted right once. Full frames are 260 bytes. Changed cells are batched; a reconnect or failed send invalidates the cache. No firmware upload, handshake, server, audio or competing startup animation is used.
+Protocol follows the supplied integration guide and `~/github.com/Fri3dCamp/fri3d-scratcher/src/lib/midi.ts`. Inputs accept only `B0 address value`; button coordinates are the address nibbles. LEDs use `F0 13 37 [address R G B]… F7`, with address `(row << 4) | (8 + column)` and 8-bit channels clamped then shifted right once. Full frames are 260 bytes. Changed cells are batched; a reconnect or failed send invalidates the cache. The flasher uses a separate WebUSB bootloader connection; the playground still has no MIDI handshake, server, audio or competing startup animation.
 
 Brightness affects the simulator and hardware equally. Optional saturation boost defaults off. The default output rate of 30 fps is an application setting, not a measured hardware limit.
 
