@@ -29,7 +29,7 @@ export const duelModes: Mode[] = ["tug", "masher"];
 export const twoPlayerModes: Mode[] = ["reversi", "connect", "tug", "masher"];
 /* Player one is red, player two is blue, everywhere on screen and on the pads. */
 export const teams: RGB[] = [
-  [255, 75, 75],
+  [255, 0, 0],
   [103, 153, 255],
 ];
 export const palette: RGB[] = [
@@ -925,7 +925,8 @@ export class Engine {
         const along = this.duelAxis === "x" ? x : y,
           mine = along < edge,
           border = along === edge - 1 || along === edge,
-          scale = border ? 0.9 : 0.42;
+          scale =
+            this.mode === "tug" ? (border ? 0.36 : 0.14) : border ? 0.9 : 0.42;
         f[y * this.width + x] = teams[mine ? 0 : 1].map((c) =>
           Math.round(c * scale),
         ) as RGB;

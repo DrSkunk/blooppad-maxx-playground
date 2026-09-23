@@ -1068,7 +1068,9 @@ export function App() {
                       </label>
                       <div className="mb-2 h-2.5 overflow-hidden rounded-full bg-blue-400/45">
                         <span
+                          className="block h-full"
                           style={{
+                            backgroundColor: `rgb(${teams[0]})`,
                             width: `${(engine.rope / engine.duelLength) * 100}%`,
                           }}
                         />

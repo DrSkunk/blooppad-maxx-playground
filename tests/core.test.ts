@@ -13,7 +13,7 @@ import { MidiAdapter, decode, encode } from "../src/lib/midi.ts";
 import { menuModeAt, renderDeviceMenu } from "../src/lib/deviceMenu.ts";
 
 test("device menu exposes only the three requested games on every pad", () => {
-  assert.deepEqual(teams[0], [255, 75, 75]);
+  assert.deepEqual(teams[0], [255, 0, 0]);
   assert.deepEqual(
     Array.from({ length: 8 }, (_, row) => menuModeAt(row)),
     ["tug", "tug", null, "connect", "connect", null, "tetris", "tetris"],
@@ -721,6 +721,7 @@ test("Tug of war rewards the fastest light and punishes early or wrong presses",
   assert.equal(e.rope, 3, "a false start hands the round to the rival");
   assert.equal(e.rounds[1], 1);
   assert.match(e.message, /Red/);
+  e.onPad(0, 0, false, "p1");
   e.update(3);
   assert.equal(e.duelState, "countdown");
   e.update(3);
@@ -735,6 +736,7 @@ test("Tug of war rewards the fastest light and punishes early or wrong presses",
   const wrong = target < 56 ? target + 8 : target - 8;
   e.onPad(Math.floor(wrong / 8), wrong % 8, true, "p1");
   assert.equal(e.rope, 2, "hitting the wrong light loses the round");
+  e.onPad(Math.floor(wrong / 8), wrong % 8, false, "p1");
   e.update(3);
   e.update(3);
   e.update(0.12);
