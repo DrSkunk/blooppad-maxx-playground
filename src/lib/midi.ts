@@ -158,6 +158,11 @@ export class MidiAdapter {
    * once cannot be told apart in the browser's USB chooser - same vendor and
    * product id, and the WCH bootloader carries no serial number - and only one can
    * be flashed at a time regardless. */
+  /* Is there a pad in `slot` that could be asked to reboot? Same lookup
+   * requestBootloader() uses, so the two cannot disagree about it. */
+  canReboot(slot = 0) {
+    return Boolean(this.outputs.find((p) => p.id === this.slots[slot]?.output));
+  }
   requestBootloader(slot = 0) {
     const out = this.outputs.find((p) => p.id === this.slots[slot]?.output);
     if (!out) return false;

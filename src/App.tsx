@@ -561,6 +561,7 @@ export function App() {
           <FirmwareFlasher
             onClose={() => setFlasher(false)}
             requestBootloader={() => midi.requestBootloader()}
+            padConnected={() => midi.canReboot()}
           />
         )}
         {!devices && midi.error && (

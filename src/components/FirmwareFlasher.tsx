@@ -19,14 +19,23 @@ function message(error: unknown): string {
 export function FirmwareFlasher({
   onClose,
   requestBootloader,
+  padConnected,
 }: {
   onClose: () => void;
   /* Asks the connected pad to reboot into its ISP bootloader over MIDI, returning
    * false if there is no pad to ask. Optional: without it, or with no pad
    * connected, the boot button still works. */
   requestBootloader?: () => boolean;
+  /* Whether a pad is connected over MIDI and could be asked to reboot. Used only
+   * to decide whether to warn before opening the USB dialog - flashing a pad that
+   * is already in its bootloader stays possible either way, because that is the
+   * route when the firmware does not run. */
+  padConnected?: () => boolean;
 }) {
   const [source, setSource] = useState<"release" | "local">("release");
+  /* Set by a Flash press with no pad connected over MIDI, cleared by anything that
+   * changes the situation. See the first lines of flash() for why this exists. */
+  const [confirmNoPad, setConfirmNoPad] = useState(false);
   const [releases, setReleases] = useState<FirmwareRelease[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -63,6 +72,22 @@ export function FirmwareFlasher({
     if (source === "release" && (!release || !proxyConfigured)) return;
     if (source === "local" && !file) return;
 
+    /* With no pad connected over MIDI nothing can be asked to reboot, so the USB
+     * dialog would open listing nothing the user can pick - and the explanation
+     * would sit behind that dialog, unread. So say it first and open nothing; the
+     * next press goes ahead, with a fresh user gesture for requestDevice().
+     *
+     * Deliberately not a disabled button: a pad whose firmware does not run cannot
+     * be connected over MIDI, and that is exactly when flashing matters most. */
+    if (!confirmNoPad && padConnected && !padConnected()) {
+      setConfirmNoPad(true);
+      setStatus("");
+      setError(
+        "No pad is connected over MIDI, so none can be told to reboot. Either press Connect BLOOPPAD first, or put the pad in its bootloader by holding the boot button while plugging USB in - then press Flash again.",
+      );
+      return;
+    }
+    setConfirmNoPad(false);
     if (source === "local" && file && (!file.name.toLowerCase().endsWith(".bin") || file.size === 0 || file.size > 65536)) {
       setError("Choose a non-empty .bin file no larger than 64 KiB.");
       return;
@@ -85,10 +110,13 @@ export function FirmwareFlasher({
       } catch {
         rebooted = false;
       }
+      /* These two cases used to read almost alike, both ending in "Select the WCH
+       * … device", and a pad that was never asked to reboot looked like normal
+       * operation. They now share no wording at all. */
       setStatus(
         rebooted
-          ? "Pad asked to reboot into the bootloader. Select the WCH device…"
-          : "Select the WCH USB bootloader device…",
+          ? "Pad rebooting into the bootloader — pick the WCH device in the dialog…"
+          : "NOT asked to reboot: no pad is connected over MIDI. Either hold the boot button and replug, or close this, press Connect BLOOPPAD, and try again.",
       );
       transport = await pending;
       isp = new WchIspFlasher(transport);
