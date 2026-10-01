@@ -106,6 +106,26 @@ function setup() {
   midi.bind();
   return { input, output, access, midi, events };
 }
+test("the bootloader request is the agreed message, goes to one pad, and invalidates its LED cache", () => {
+  const { midi, output } = setup();
+
+  /* The exact bytes firmware/src/bootloader.h matches on, in the other
+   * repository. 0x00 in the fourth position is what distinguishes this from an
+   * LED frame, whose first address byte is never 0x00 - compare the LED
+   * expectation above, which is [240, 19, 55, 8, ...]. */
+  assert.equal(midi.requestBootloader(), true);
+  assert.deepEqual(output.sent.at(-1), [0xf0, 0x13, 0x37, 0x00, 0x42, 0x4f, 0x4f, 0xf7]);
+
+  /* The pad reboots and forgets its LEDs, so the next frame must go out in full
+   * rather than being diffed against what it used to show. */
+  assert.equal(midi.caches.has(output.id), false);
+
+  /* A slot with no output assigned is reported rather than throwing, and a send
+   * failure is contained - this must never take the flasher down. */
+  assert.equal(midi.requestBootloader(1), false);
+  output.fail = true;
+  assert.equal(midi.requestBootloader(), false);
+});
 test("deduplication, releases, reconnect repaint, failure recovery and listener cleanup", () => {
   const { midi, input, output, events } = setup();
   assert.equal(midi.status, "Connected");

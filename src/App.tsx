@@ -557,7 +557,12 @@ export function App() {
               : "SIMULATOR MODE"}
           </span>
         </section>
-        {flasher && <FirmwareFlasher onClose={() => setFlasher(false)} />}
+        {flasher && (
+          <FirmwareFlasher
+            onClose={() => setFlasher(false)}
+            requestBootloader={() => midi.requestBootloader()}
+          />
+        )}
         {!devices && midi.error && (
           <div
             className="border-device bg-device-bg mb-5 rounded-xl border p-5 text-xs"

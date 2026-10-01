@@ -148,6 +148,29 @@ export class MidiAdapter {
       this.changed();
     }
   }
+  /* Ask the pad in `slot` to reboot into its ISP bootloader, so a reflash needs no
+   * boot button and no replug. The message is defined in
+   * firmware/src/bootloader.h; it is the usual SysEx envelope with 0x00 where an
+   * LED frame carries its first address byte, which is never a valid address.
+   * Returns true if it was handed to an output.
+   *
+   * Sends to one pad only, never to every configured output. Two pads in ISP at
+   * once cannot be told apart in the browser's USB chooser - same vendor and
+   * product id, and the WCH bootloader carries no serial number - and only one can
+   * be flashed at a time regardless. */
+  requestBootloader(slot = 0) {
+    const out = this.outputs.find((p) => p.id === this.slots[slot]?.output);
+    if (!out) return false;
+    try {
+      out.send([0xf0, 0x13, 0x37, 0x00, 0x42, 0x4f, 0x4f, 0xf7]);
+      /* It is about to reboot and forget its LEDs, so the next frame must be sent
+       * in full rather than diffed against what this pad used to be showing. */
+      this.caches.delete(out.id);
+      return true;
+    } catch {
+      return false;
+    }
+  }
   dispose() {
     this.disposed = true;
     this.release();
