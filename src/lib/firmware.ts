@@ -47,11 +47,31 @@ export function parseReleases(value: unknown): FirmwareRelease[] {
   }).sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
 }
 
-export async function fetchReleases(): Promise<FirmwareRelease[]> {
+function releaseError(response: Response): Error {
+  if ((response.status === 403 || response.status === 429) && response.headers.get("x-ratelimit-remaining") === "0") {
+    const reset = Number(response.headers.get("x-ratelimit-reset"));
+    const when = Number.isFinite(reset) && reset > 0
+      ? ` Try again after ${new Date(reset * 1000).toLocaleTimeString()}.`
+      : " Try again later.";
+    return new Error(`GitHub API rate limit reached for your network.${when}`);
+  }
+  return new Error(`Could not load firmware releases (HTTP ${response.status}).`);
+}
+
+export async function fetchReleases(
+  proxyOrigin = import.meta.env.VITE_FIRMWARE_PROXY_ORIGIN,
+): Promise<FirmwareRelease[]> {
+  const origin = proxyOrigin?.replace(/\/$/, "");
+  if (origin) {
+    // The proxy paginates, caches at the CDN and may authenticate, avoiding the per-IP limit.
+    const response = await fetch(`${origin}/api/releases`);
+    if (!response.ok) throw releaseError(response);
+    return parseReleases(await response.json());
+  }
   const releases: FirmwareRelease[] = [];
   for (let page = 1; page <= 10; page++) {
     const response = await fetch(`${RELEASES_URL}?per_page=100&page=${page}`);
-    if (!response.ok) throw new Error(`Could not load firmware releases (HTTP ${response.status}).`);
+    if (!response.ok) throw releaseError(response);
     const value: unknown = await response.json();
     if (!Array.isArray(value)) throw new Error("Invalid GitHub release response.");
     releases.push(...parseReleases(value));

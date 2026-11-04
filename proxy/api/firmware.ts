@@ -31,6 +31,8 @@ export async function GET(request: Request): Promise<Response> {
     "X-GitHub-Api-Version": "2022-11-28",
     "User-Agent": "blooppad-maxx-playground",
   });
+  const token = process.env.GITHUB_TOKEN;
+  if (token) headers.set("Authorization", `Bearer ${token}`);
   try {
     const metadata = await fetch(`${ASSET_API}${id}`, { headers });
     if (!metadata.ok) return errorResponse(request, 502, `GitHub asset lookup failed (HTTP ${metadata.status}).`);

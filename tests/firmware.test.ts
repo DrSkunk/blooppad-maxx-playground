@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { GET, OPTIONS } from "../proxy/api/firmware.ts";
-import { downloadFirmware, parseReleases, verifyFirmware } from "../src/lib/firmware.ts";
+import { GET as releasesGET } from "../proxy/api/releases.ts";
+import { downloadFirmware, fetchReleases, parseReleases, verifyFirmware } from "../src/lib/firmware.ts";
 
 const firmware = new Uint8Array([1, 2, 3]);
 const sha256 = "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81";
@@ -64,4 +65,44 @@ test("proxy rejects an asset that is not the official firmware binary", async (t
   globalThis.fetch = async () => Response.json({ ...asset, name: "other.bin" });
   const response = await GET(new Request("https://proxy.example/api/firmware?asset=42"));
   assert.equal(response.status, 404);
+});
+
+test("release catalog uses the proxy and reports GitHub rate limits", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  const calls: string[] = [];
+  globalThis.fetch = async (input) => {
+    calls.push(String(input));
+    return Response.json([release]);
+  };
+  assert.deepEqual(await fetchReleases("https://proxy.example/"), [selected]);
+  assert.deepEqual(calls, ["https://proxy.example/api/releases"]);
+
+  globalThis.fetch = async () => new Response("", {
+    status: 403,
+    headers: { "x-ratelimit-remaining": "0", "x-ratelimit-reset": "1793823502" },
+  });
+  await assert.rejects(fetchReleases(""), /rate limit/);
+});
+
+test("release proxy trims GitHub releases and sends browser CORS headers", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  const calls: string[] = [];
+  globalThis.fetch = async (input) => {
+    calls.push(String(input));
+    return Response.json([{ ...release, body: "notes", assets: [{ ...asset, uploader: { login: "x" } }] }]);
+  };
+  const request = new Request("https://proxy.example/api/releases", { headers: { Origin: "https://drskunk.github.io" } });
+  const response = await releasesGET(request);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("Access-Control-Allow-Origin"), "https://drskunk.github.io");
+  assert.match(response.headers.get("Cache-Control") ?? "", /s-maxage/);
+  assert.deepEqual(await response.json(), [release]);
+  assert.deepEqual(calls, ["https://api.github.com/repos/phyx-be/BLOOPPAD-MAXX/releases?per_page=100&page=1"]);
+
+  globalThis.fetch = async () => new Response("", { status: 403 });
+  assert.equal((await releasesGET(request)).status, 502);
+  const foreign = await releasesGET(new Request("https://proxy.example/api/releases", { headers: { Origin: "https://evil.example" } }));
+  assert.equal(foreign.status, 403);
 });
