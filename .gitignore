@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Vercel CLI link and pulled env
+.vercel
+.env*.local
+.env*

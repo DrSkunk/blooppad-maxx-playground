@@ -31,7 +31,8 @@ export async function GET(request: Request): Promise<Response> {
     "X-GitHub-Api-Version": "2022-11-28",
     "User-Agent": "blooppad-maxx-playground",
   });
-  const token = process.env.GITHUB_TOKEN;
+  // Read via globalThis so the proxy type-checks without @types/node on Vercel.
+  const token = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.GITHUB_TOKEN;
   if (token) headers.set("Authorization", `Bearer ${token}`);
   try {
     const metadata = await fetch(`${ASSET_API}${id}`, { headers });
