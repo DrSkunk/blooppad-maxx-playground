@@ -13,7 +13,15 @@ Open the localhost URL printed by Vite. Use a Chromium browser on HTTPS or local
 
 ## Flash firmware
 
-Click **Flash firmware** to install an official release or a local `.bin` file. Disconnect the pad, hold its board boot button while reconnecting USB, then select the WCH bootloader when prompted. The app checks for the CH32X035G8U6 ISP ID before writing and verifies the flash after installation. WebUSB requires a compatible browser on HTTPS or localhost. On Windows, the bootloader may require a WinUSB driver.
+Click **Flash firmware** to install an official release or a local `.bin` file. With the pad connected over MIDI there is nothing to hold or unplug: pressing Flash sends the SysEx `F0 13 37 00 42 4F 4F F7`, which reboots the pad into its ISP bootloader, and the WCH device then appears in the USB chooser a moment after the dialog opens. The dialog is opened *before* the pad is rebooted on purpose - WebUSB's `requestDevice()` needs a user gesture, so it has to be called straight from the click, when the bootloader does not exist yet; the chooser is live, so the device turns up in the list while you are looking at it.
+
+Falling back to the boot button still works, and is the route when the firmware does not run or does not enumerate: unplug the pad, hold its board boot button while reconnecting USB, then press Flash.
+
+The chooser appears on every flash. It cannot be skipped by remembering the permission, because the WCH bootloader carries no USB serial number, so the browser treats each ISP enumeration as a new device and an earlier grant never applies.
+
+Only one pad is asked to reboot, even with several configured: two pads in the bootloader at once are indistinguishable in the chooser (same vendor and product id, no serial number), and only one can be flashed at a time anyway.
+
+The app checks for the CH32X035G8U6 ISP ID before writing and verifies the flash after installation. Note that this establishes the *part*, not the *board* - any other CH32X035 reports the same id - so unplug other CH32 boards before flashing. WebUSB requires a compatible browser on HTTPS or localhost. On Windows, the bootloader may require a WinUSB driver.
 
 Published versions come from the [BLOOPPAD-MAXX GitHub releases API](https://github.com/phyx-be/BLOOPPAD-MAXX/releases) via the proxy's `proxy/api/releases.ts`, which the Vercel CDN caches for five minutes so visitors do not hit GitHub's 60-requests-per-hour unauthenticated limit. Without a configured proxy the browser queries GitHub directly. The browser verifies each downloaded binary against GitHub's release size and SHA-256 digest. GitHub's binary host does not allow the browser to read release assets across origins, so a narrow Vercel Function in `proxy/api/firmware.ts` retrieves only official `firmware.bin` assets by ID. Firmware is not bundled with the site. Local files never leave the browser.
 
