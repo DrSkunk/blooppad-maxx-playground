@@ -5,26 +5,28 @@
   --font-sans: "DM Sans", sans-serif;
   --font-display: "Space Grotesk", sans-serif;
 
-  --color-app: #e5e5eb;
-  --color-canvas: #101114;
-  --color-sidebar: #141519;
-  --color-panel: #16171c;
-  --color-card: #191a20;
-  --color-surface: #202127;
-  --color-selected: #2a2238;
-  --color-brandmark: #2b233a;
-  --color-device-bg: #221d2c;
-  --color-line: #2d2e35;
-  --color-line-soft: #27282e;
-  --color-pad: #40414c;
-  --color-device: #574369;
-  --color-nav: #8f919e;
-  --color-muted: #878993;
-  --color-dim: #6c6e79;
-  --color-lavender: #bb9af0;
-  --color-lavender-hover: #cdb1f8;
-  --color-lavender-text: #c5a7ff;
-  --color-success: #99d6b0;
+  /* Dark is the default; the light values below follow prefers-color-scheme. */
+  --color-app: #ffffff;
+  --color-canvas: #000000;
+  --color-sidebar: #000000;
+  --color-panel: #000000;
+  --color-card: #0a0a0a;
+  --color-surface: #171717;
+  --color-line: #2e2e2e;
+  --color-line-soft: #1f1f1f;
+  --color-line-strong: #ffffff;
+  --color-nav: #a3a3a3;
+  --color-muted: #a3a3a3;
+  --color-dim: #8a8a8a;
+  --color-success: #ffffff;
+  --color-danger: #ff6b6b;
+
+  /* The simulated pad is a dark object in both schemes, so LEDs read true. */
+  --color-pad: #333333;
+  --color-pad-shell: #0d0d0d;
+  --color-pad-bed: #000000;
+  --color-pixel: #1a1a1a;
+  --color-pad-text: #8a8a8a;
 
   --spacing-sidebar: 14.875rem;
   --spacing-sidebar-sm: 12.5rem;
@@ -35,9 +37,6 @@
   --grid-template-columns-workspace: minmax(0, 1fr) 16.5rem;
   --grid-template-columns-workspace-sm: minmax(0, 1fr) 14.6875rem;
   --grid-template-columns-workspace-tablet: minmax(0, 1fr) 14.0625rem;
-
-  --background-image-pad-shell: linear-gradient(140deg, #292a32, #202127);
-  --shadow-pad: 0 18px 30px #0006, inset 0 1px 0 #ffffff09;
 }
 
 @custom-variant laptop (@media (width < 71.875rem));
@@ -45,12 +44,41 @@
 @custom-variant compact (@media (width < 40.625rem));
 @custom-variant wide (@media (width >= 90.625rem));
 
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-app: #000000;
+    --color-canvas: #ffffff;
+    --color-sidebar: #ffffff;
+    --color-panel: #ffffff;
+    --color-card: #ffffff;
+    --color-surface: #f2f2f2;
+    --color-line: #d4d4d4;
+    --color-line-soft: #e5e5e5;
+    --color-line-strong: #000000;
+    --color-nav: #404040;
+    --color-muted: #525252;
+    --color-dim: #6b6b6b;
+    --color-success: #000000;
+    --color-danger: #b91c1c;
+    --color-pad: #000000;
+    --color-pad-shell: #141414;
+  }
+}
+
 @layer base {
   :root {
     color: var(--color-app);
     background: var(--color-canvas);
     font-family: var(--font-sans);
     font-synthesis: none;
+    color-scheme: dark light;
+    scrollbar-color: var(--color-dim) var(--color-canvas);
+    accent-color: var(--color-app);
+  }
+
+  ::selection {
+    background: var(--color-app);
+    color: var(--color-canvas);
   }
 
   button {
@@ -64,26 +92,29 @@
 
   button:focus-visible,
   a:focus-visible,
-  summary:focus-visible {
-    outline: 2px solid #b896ff;
-    outline-offset: 4px;
+  summary:focus-visible,
+  select:focus-visible,
+  input:focus-visible {
+    outline: 2px solid var(--color-app);
+    outline-offset: 3px;
   }
 }
 
+/* Rectangles only: no rounded corners anywhere. Unlayered, so it beats utilities. */
+*,
+::before,
+::after,
+::file-selector-button {
+  border-radius: 0;
+}
+
 .stage-grid {
-  background-image: radial-gradient(#39323f50 1px, transparent 1px);
+  background-image: radial-gradient(var(--color-line) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
 .pixel {
-  background: linear-gradient(145deg, #202127, #191a20);
-  box-shadow:
-    inset 0 1px 1px #ffffff08,
-    0 2px 2px #0003;
-}
-
-.pixel.lit {
-  background-image: none;
+  background: var(--color-pixel);
 }
 
 @media (width >= 40.625rem) and (height < 51.25rem) {

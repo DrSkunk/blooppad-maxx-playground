@@ -1,0 +1,397 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-10T13:30:41.565Z",
+  "title": "Design System: BLOOPPAD-MAXX Playground",
+  "extensions": {
+    "colorScheme": {
+      "default": "dark",
+      "override": "@media (prefers-color-scheme: light) on :root",
+      "note": "Unsuffixed frontmatter keys are the dark default; '-light' keys are the light override. Pad-bed, pixel and pad-text have no override."
+    },
+    "colorMeta": {
+      "app": {
+        "role": "primary",
+        "displayName": "Foreground",
+        "canonical": "#ffffff",
+        "light": "#000000",
+        "tonalRamp": [
+          "#000000",
+          "#0a0a0a",
+          "#171717",
+          "#1f1f1f",
+          "#2e2e2e",
+          "#8a8a8a",
+          "#a3a3a3",
+          "#ffffff"
+        ]
+      },
+      "app-light": {
+        "role": "primary",
+        "displayName": "Foreground (light scheme)"
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Canvas",
+        "canonical": "#000000",
+        "light": "#ffffff",
+        "tonalRamp": [
+          "#000000",
+          "#0a0a0a",
+          "#171717",
+          "#1f1f1f",
+          "#2e2e2e",
+          "#8a8a8a",
+          "#a3a3a3",
+          "#ffffff"
+        ]
+      },
+      "canvas-light": {
+        "role": "neutral",
+        "displayName": "Canvas (light scheme)"
+      },
+      "sidebar": {
+        "role": "neutral",
+        "displayName": "Sidebar",
+        "canonical": "#000000",
+        "light": "#ffffff"
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Panel",
+        "canonical": "#000000",
+        "light": "#ffffff"
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Card",
+        "canonical": "#0a0a0a",
+        "light": "#ffffff"
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "#171717",
+        "light": "#f2f2f2"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "canonical": "#2e2e2e",
+        "light": "#d4d4d4"
+      },
+      "line-soft": {
+        "role": "neutral",
+        "displayName": "Line Soft",
+        "canonical": "#1f1f1f",
+        "light": "#e5e5e5"
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Line Strong",
+        "canonical": "#ffffff",
+        "light": "#000000"
+      },
+      "nav": {
+        "role": "neutral",
+        "displayName": "Nav",
+        "canonical": "#a3a3a3",
+        "light": "#404040"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "#a3a3a3",
+        "light": "#525252"
+      },
+      "dim": {
+        "role": "neutral",
+        "displayName": "Dim",
+        "canonical": "#8a8a8a",
+        "light": "#6b6b6b"
+      },
+      "success": {
+        "role": "neutral",
+        "displayName": "Success (equals Foreground)",
+        "canonical": "#ffffff",
+        "light": "#000000"
+      },
+      "danger": {
+        "role": "secondary",
+        "displayName": "Danger (errors only)",
+        "canonical": "#ff6b6b",
+        "light": "#b91c1c"
+      },
+      "pad": {
+        "role": "neutral",
+        "displayName": "Pad Edge",
+        "canonical": "#333333",
+        "light": "#000000"
+      },
+      "pad-shell": {
+        "role": "neutral",
+        "displayName": "Pad Shell",
+        "canonical": "#0d0d0d",
+        "light": "#141414"
+      },
+      "pad-bed": {
+        "role": "neutral",
+        "displayName": "Pad Bed (both schemes)",
+        "canonical": "#000000"
+      },
+      "pixel": {
+        "role": "neutral",
+        "displayName": "Unlit Pixel (both schemes)",
+        "canonical": "#1a1a1a"
+      },
+      "pad-text": {
+        "role": "neutral",
+        "displayName": "Pad Silkscreen (both schemes)",
+        "canonical": "#8a8a8a"
+      },
+      "led-red": {
+        "role": "tertiary",
+        "displayName": "LED Red (player one)",
+        "canonical": "#ff0000"
+      },
+      "led-blue": {
+        "role": "tertiary",
+        "displayName": "LED Blue (player two)",
+        "canonical": "#6799ff"
+      },
+      "led-amber": {
+        "role": "tertiary",
+        "displayName": "LED Amber (Tetris band)",
+        "canonical": "#ffb74d"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page title on every track, ending in a foreground full stop."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings and the selected game name."
+      },
+      "score": {
+        "displayName": "Score",
+        "purpose": "Zero-padded score readouts."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Step titles, aside headings, row-link titles."
+      },
+      "nav": {
+        "displayName": "Nav",
+        "purpose": "Track bar and experience strip."
+      },
+      "lead": {
+        "displayName": "Lead",
+        "purpose": "Paragraph under the page title."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Panel copy, descriptions, steps."
+      },
+      "control": {
+        "displayName": "Control",
+        "purpose": "Buttons, selects, captions, footer."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Tracked status labels and unit captions."
+      }
+    },
+    "shadows": [
+      {
+        "name": "led-halo",
+        "value": "0 0 15px rgba(<led rgb>, .16)",
+        "purpose": "Lit pixels only; LED light, not elevation."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Tailwind default transition on nav colors, row hovers and pixel hover."
+      },
+      {
+        "name": "press-scale",
+        "value": "scale(0.9)",
+        "purpose": "Pixel press feedback."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact",
+        "value": "< 650px"
+      },
+      {
+        "name": "sm",
+        "value": ">= 640px"
+      },
+      {
+        "name": "md",
+        "value": ">= 768px"
+      },
+      {
+        "name": "tablet",
+        "value": "< 850px"
+      },
+      {
+        "name": "lg",
+        "value": ">= 1024px"
+      },
+      {
+        "name": "laptop",
+        "value": "< 1150px"
+      },
+      {
+        "name": "wide",
+        "value": ">= 1450px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Single main action per region: Start/Pause, Flash firmware. Inverted fill.",
+      "html": "<button class=\"ds-btn-primary\">Flash firmware</button>",
+      "css": ".ds-btn-primary { background: var(--color-app, #ffffff); color: var(--color-canvas, #000000); font: 700 12px/1 'DM Sans', sans-serif; padding: 12px 20px; border: 0; border-radius: 0; cursor: pointer; white-space: nowrap; transition: opacity 150ms cubic-bezier(0.4,0,0.2,1); } .ds-btn-primary:hover { background: color-mix(in srgb, var(--color-app, #ffffff) 85%, transparent); } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-app, #ffffff); outline-offset: 3px; } .ds-btn-primary:disabled { opacity: .4; cursor: not-allowed; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined utility action: Reset, All games, Hardware repo. Inside hardware panels the border becomes Line Strong.",
+      "html": "<div class=\"ds-row\"><button class=\"ds-btn-secondary\">Reset</button><button class=\"ds-btn-secondary ds-strong\">Find pad</button></div>",
+      "css": ".ds-row { display: flex; gap: 8px; } .ds-btn-secondary { background: transparent; color: var(--color-app, #ffffff); font: 400 11px/1 'DM Sans', sans-serif; padding: 8px 12px; border: 1px solid var(--color-line, #2e2e2e); border-radius: 0; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4,0,0.2,1); } .ds-btn-secondary:hover { background: var(--color-surface, #171717); } .ds-strong { border-color: var(--color-line-strong, #ffffff); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--color-app, #ffffff); outline-offset: 3px; }"
+    },
+    {
+      "name": "Choice Pair",
+      "kind": "chip",
+      "refersTo": "choice-active",
+      "description": "aria-pressed option buttons; the pressed one inverts.",
+      "html": "<div class=\"ds-choices\"><button class=\"ds-choice ds-on\" aria-pressed=\"true\">Over USB-MIDI</button><button class=\"ds-choice\" aria-pressed=\"false\">Boot button</button></div>",
+      "css": ".ds-choices { display: flex; gap: 8px; } .ds-choice { background: transparent; color: var(--color-app, #ffffff); font: 400 11px/1 'DM Sans', sans-serif; padding: 8px 12px; border: 1px solid var(--color-line, #2e2e2e); border-radius: 0; cursor: pointer; } .ds-choice:hover { background: var(--color-surface, #171717); } .ds-choice.ds-on { background: var(--color-app, #ffffff); border-color: var(--color-app, #ffffff); color: var(--color-canvas, #000000); } .ds-choice:focus-visible { outline: 2px solid var(--color-app, #ffffff); outline-offset: 3px; }"
+    },
+    {
+      "name": "Track Bar",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Sticky top bar with the five tracks; the current track inverts.",
+      "html": "<nav class=\"ds-tracks\"><a class=\"ds-track ds-on\" aria-current=\"page\" href=\"#\">Pad menu</a><a class=\"ds-track\" href=\"#\">Browser games</a><a class=\"ds-track\" href=\"#\">Flash firmware</a><a class=\"ds-track\" href=\"#\">Hardware</a><a class=\"ds-track\" href=\"#\">Hack</a></nav>",
+      "css": ".ds-tracks { display: flex; gap: 4px; padding: 14px 24px; background: var(--color-sidebar, #000000); border-bottom: 1px solid var(--color-line-soft, #1f1f1f); } .ds-track { padding: 8px 12px; border-radius: 0; color: var(--color-nav, #a3a3a3); font: 500 12px/1 'DM Sans', sans-serif; text-decoration: none; white-space: nowrap; transition: background-color 150ms cubic-bezier(0.4,0,0.2,1), color 150ms cubic-bezier(0.4,0,0.2,1); } .ds-track:hover { background: var(--color-surface, #171717); color: var(--color-app, #ffffff); } .ds-track:focus-visible { outline: 2px solid var(--color-app, #ffffff); outline-offset: 3px; } .ds-track.ds-on { background: var(--color-app, #ffffff); color: var(--color-canvas, #000000); }"
+    },
+    {
+      "name": "Select",
+      "kind": "input",
+      "refersTo": "select",
+      "description": "Pad count, MIDI port assignment, firmware release.",
+      "html": "<select class=\"ds-select\"><option>2 pads · 128 pixels</option></select>",
+      "css": ".ds-select { width: 220px; background: var(--color-surface, #171717); color: var(--color-app, #ffffff); font: 400 11px/1.2 'DM Sans', sans-serif; padding: 10px; border: 1px solid var(--color-line, #2e2e2e); border-radius: 0; } .ds-select:focus-visible { outline: 2px solid var(--color-app, #ffffff); outline-offset: 3px; }"
+    },
+    {
+      "name": "Side Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Instrument card in the side column, with an inverted value chip, a range and a segmented toggle.",
+      "html": "<section class=\"ds-card\"><h2>Set the mood</h2><label class=\"ds-card-label\">Speed <b>1.5×</b></label><input class=\"ds-range\" type=\"range\" value=\"60\"><div class=\"ds-seg\"><button class=\"ds-seg-on\">Horizontal</button><button>Vertical</button></div></section>",
+      "css": ".ds-card { width: 224px; background: var(--color-card, #0a0a0a); color: var(--color-app, #ffffff); border: 1px solid var(--color-line, #2e2e2e); border-radius: 0; padding: 20px; font-family: 'DM Sans', sans-serif; } .ds-card h2 { margin: 0 0 16px; font-size: 12px; font-weight: 600; } .ds-card-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-nav, #a3a3a3); } .ds-card-label b { background: var(--color-app, #ffffff); color: var(--color-canvas, #000000); font-size: 9px; font-weight: 500; line-height: 1; padding: 4px 6px; border-radius: 0; } .ds-range { display: block; width: 100%; margin: 12px 0; accent-color: var(--color-app, #ffffff); } .ds-seg { display: flex; gap: 4px; padding: 4px; background: var(--color-canvas, #000000); } .ds-seg button { flex: 1; padding: 8px 4px; border: 0; border-radius: 0; background: transparent; color: var(--color-dim, #8a8a8a); font: 400 9px/1 'DM Sans', sans-serif; cursor: pointer; } .ds-seg button:focus-visible { outline: 2px solid var(--color-app, #ffffff); outline-offset: 3px; } .ds-seg .ds-seg-on { background: var(--color-app, #ffffff); color: var(--color-canvas, #000000); }"
+    },
+    {
+      "name": "Hardware Panel",
+      "kind": "card",
+      "refersTo": "hardware-panel",
+      "description": "Canvas panel with a full-contrast hairline for tasks that touch a physical device; numbered steps separated by soft rules.",
+      "html": "<section class=\"ds-hw\"><div class=\"ds-step\"><h3><span>1</span>Reach the bootloader</h3><p>Plug the pad in and let it reach the game menu.</p></div><div class=\"ds-step\"><h3><span>2</span>Pick a release</h3><p>Official releases come from GitHub.</p></div><p class=\"ds-err\" role=\"alert\">No pad answered. Try the boot button.</p></section>",
+      "css": ".ds-hw { width: 380px; background: var(--color-canvas, #000000); border: 1px solid var(--color-line-strong, #ffffff); border-radius: 0; padding: 24px; font: 400 12px/20px 'DM Sans', sans-serif; color: var(--color-app, #ffffff); } .ds-step { padding: 16px 0; border-top: 1px solid var(--color-line-soft, #1f1f1f); } .ds-step:first-child { border-top: 0; padding-top: 0; } .ds-step h3 { margin: 0; font-size: 13px; font-weight: 600; } .ds-step h3 span { font-family: 'Space Grotesk', sans-serif; font-variant-numeric: tabular-nums; margin-right: 8px; } .ds-step p { margin: 4px 0 0; color: var(--color-muted, #a3a3a3); } .ds-err { margin: 12px 0 0; color: var(--color-danger, #ff6b6b); }"
+    },
+    {
+      "name": "Color Swatches",
+      "kind": "chip",
+      "refersTo": "value-chip",
+      "description": "Square LED-color swatches with a Line hairline so white and black read in both schemes; selected takes a foreground outline.",
+      "html": "<div class=\"ds-sw\"><button class=\"ds-on\" style=\"background:#ff0000\" aria-label=\"Red\"></button><button style=\"background:#6799ff\" aria-label=\"Blue\"></button><button style=\"background:#ffb74d\" aria-label=\"Amber\"></button><button style=\"background:#ffffff\" aria-label=\"White\"></button><button style=\"background:#000000\" aria-label=\"Eraser\"></button></div>",
+      "css": ".ds-sw { display: flex; gap: 8px; padding: 4px; } .ds-sw button { width: 24px; height: 24px; padding: 0; border: 1px solid var(--color-line, #2e2e2e); border-radius: 0; cursor: pointer; } .ds-sw .ds-on { outline: 2px solid var(--color-app, #ffffff); outline-offset: 3px; } .ds-sw button:focus-visible { outline: 2px solid var(--color-app, #ffffff); outline-offset: 3px; }"
+    },
+    {
+      "name": "Simulated Pad",
+      "kind": "custom",
+      "refersTo": "pad-shell",
+      "description": "Signature: a dark pad object in both schemes with square corner screws and a square LED grid; lit pixels carry the LED halo.",
+      "html": "<div class=\"ds-pad\"><i class=\"ds-screw\" style=\"top:10px;left:10px\"></i><i class=\"ds-screw\" style=\"top:10px;right:10px\"></i><div class=\"ds-bed\"><i class=\"ds-px ds-lit\" style=\"background:#ff0000;--glow:255,0,0\"></i><i class=\"ds-px\"></i><i class=\"ds-px ds-lit\" style=\"background:#6799ff;--glow:103,153,255\"></i><i class=\"ds-px\"></i><i class=\"ds-px\"></i><i class=\"ds-px ds-lit\" style=\"background:#ffb74d;--glow:255,183,77\"></i><i class=\"ds-px\"></i><i class=\"ds-px\"></i><i class=\"ds-px\"></i><i class=\"ds-px\"></i><i class=\"ds-px ds-lit\" style=\"background:#ffffff;--glow:255,255,255\"></i><i class=\"ds-px\"></i><i class=\"ds-px\"></i><i class=\"ds-px\"></i><i class=\"ds-px\"></i><i class=\"ds-px\"></i></div><div class=\"ds-cap\">BLOOPPAD <b>MAXX</b></div></div>",
+      "css": ".ds-pad { position: relative; width: 180px; padding: 24px 24px 12px; background: var(--color-pad-shell, #0d0d0d); border: 1px solid var(--color-pad, #333333); border-radius: 0; } .ds-screw { position: absolute; width: 4px; height: 4px; background: var(--color-pad-bed, #000000); border: 1px solid var(--color-pad, #333333); } .ds-bed { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px; background: var(--color-pad-bed, #000000); border: 1px solid #000; } .ds-px { display: block; aspect-ratio: 1; border: 1px solid rgba(255,255,255,.05); background: var(--color-pixel, #1a1a1a); transition: filter 150ms, transform 150ms; } .ds-px.ds-lit { box-shadow: 0 0 15px rgba(var(--glow), .16); } .ds-px:hover { filter: brightness(1.25); } .ds-px:active { transform: scale(.9); } .ds-cap { margin-top: 12px; text-align: center; font: 400 8px/1 'Space Grotesk', sans-serif; letter-spacing: .28em; color: var(--color-dim, #8a8a8a); } .ds-cap b { font-size: 7px; letter-spacing: .025em; color: var(--color-pad-text, #8a8a8a); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Black Rectangle",
+    "overview": "Clean black and white, built from rectangles. The chrome is pure monochrome: a black page with white type in the dark scheme, a white page with black type in the light scheme, chosen by the visitor's `prefers-color-scheme` and nothing else. There is no accent hue. State is shown by inversion: the current track, the chosen option and the primary action are filled with the foreground color and lettered in the background color. Every corner is square, enforced globally.\n\nThe pads are the exception that makes the system work. The simulated BLOOPPAD-MAXX is a dark object in both schemes, so its LEDs read true on a white page as well as a black one, and the LEDs carry all the color on screen. The only other place color appears is the text label that names an LED choice. Depth is flat: hairlines and a few grey steps separate surfaces; nothing casts a shadow, and the one glow is the halo of a lit LED.\n\nControls stay dense and exact: dimensions, pad counts, port IDs, versions and scores sit up front as data. Rejected on the chrome: neon or cyberpunk styling (glowing gradients, scanlines, synthwave palettes).",
+    "keyCharacteristics": [
+      "Monochrome chrome with paired dark and light values that follow the system color scheme.",
+      "Selection and primary actions invert: foreground fill, background-colored text.",
+      "Square corners everywhere (`border-radius: 0` on every element and pseudo-element).",
+      "Hardware-task panels marked by a full-contrast hairline, not by a tint.",
+      "A dark simulated pad in both schemes; color lives only in LED pixels and the labels that name LED colors.",
+      "Space Grotesk for headings and numbers, DM Sans for everything else."
+    ],
+    "rules": [
+      {
+        "name": "The Monochrome Chrome Rule",
+        "body": "The interface around the pads has no hue. If a color is not black, white, a token grey or `danger` on an error, it belongs on an LED pixel or on the label that names that LED color.",
+        "section": "colors"
+      },
+      {
+        "name": "The Inversion Rule",
+        "body": "Selected, current and primary are shown by swapping foreground and background (`app` fill, `canvas` text). Never introduce a tint or accent for state.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dark Object Rule",
+        "body": "The pad tokens stay dark in both schemes so LED colors render true. Do not theme the pad to the page.",
+        "section": "colors"
+      },
+      {
+        "name": "The Instrument Label Rule",
+        "body": "Status and context speak in small, tracked uppercase; actions and explanations speak in sentence case. Never set a button or a sentence in tracked caps.",
+        "section": "typography"
+      },
+      {
+        "name": "The Numbers Are Display Rule",
+        "body": "Scores, step numbers, pin names and counts read as data use Space Grotesk with tabular figures, so values do not jitter as they change.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Rule",
+        "body": "Nothing casts a shadow: not panels, not pad shells, not pixels, not toggles. No gradients on surfaces. Use a hairline or a grey step instead.",
+        "section": "elevation"
+      },
+      {
+        "name": "The LED Light Exception",
+        "body": "A lit pixel keeps a soft halo in its own color. It is light, not elevation, and it is the only glow anywhere.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep the chrome monochrome: `app`, `canvas`, the grey tokens, and `danger` for errors only.",
+      "Do define every chrome color as a dark default with a `prefers-color-scheme: light` override; never hard-code black or white.",
+      "Do show selected, current and primary by inverting: Foreground fill, Canvas text.",
+      "Do put hardware-facing panels on Canvas with a Line Strong hairline.",
+      "Do keep the simulated pad dark in both schemes, and keep color on LED pixels and the labels that name LED colors.",
+      "Do give every color swatch a 1px Line hairline so white and black swatches stay visible in either scheme.",
+      "Do show state as data: dimensions, pad counts, port IDs, versions, numeric readouts.",
+      "Do keep the 2px Foreground focus outline, offset 3px, on every interactive element."
+    ],
+    "donts": [
+      "Don't round a corner; the global zero radius is the shape language.",
+      "Don't add shadows or gradients to any surface; the lit-LED halo is the only glow.",
+      "Don't put an eyebrow or kicker label above a heading.",
+      "Don't introduce an accent hue for UI state, links or success; success is the foreground color.",
+      "Don't use `danger` for anything but error messages.",
+      "Don't use neon or cyberpunk styling on the chrome: no glowing gradients, scanlines or synthwave palettes.",
+      "Don't set buttons or body sentences in tracked capitals."
+    ]
+  }
+}

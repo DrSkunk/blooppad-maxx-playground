@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "space grotesk",
+        "createdAt": "2026-11-10T13:15:15.925Z",
+        "reason": "assistant decision: incumbent display face from the existing code, recorded in DESIGN.md; the revamp inherits the established world"
+      }
+    ]
+  }
+}

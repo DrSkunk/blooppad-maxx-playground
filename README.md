@@ -1,6 +1,14 @@
 # BLOOPPAD-MAXX Playground
 
-A browser arcade and pixel studio for one to four BLOOPPAD-MAXX units. Everything works without hardware.
+A browser companion for the [BLOOPPAD-MAXX](https://github.com/phyx-be/BLOOPPAD-MAXX), organised as tracks:
+
+- **Pad menu** (home): a pixel-exact mirror of the firmware's built-in game menu. Tap a button to read how that game starts, plays and returns to the menu.
+- **Browser games**: games and a pixel studio that drive one to four pads over USB-MIDI, or play on screen without hardware.
+- **Flash firmware**: install an official release or a local `.bin` over WebUSB.
+- **Hardware**: how the board is built, specifications, expansion header, revisions and links to the schematic, Gerbers, BOM and mechanical files.
+- **Hack**: button and LED addresses, SysEx frames, the bootloader command, I²C, UART and building the firmware.
+
+Routes are hash-based (`#/`, `#/browser`, `#/browser/<mode>`, `#/flash`, `#/hardware`, `#/hack`) so GitHub Pages needs no rewrites.
 
 ## Run
 
@@ -9,11 +17,11 @@ npm install
 npm run dev
 ```
 
-Open the localhost URL printed by Vite. Use a Chromium browser on HTTPS or localhost for Web MIDI. Click **Connect BLOOPPAD** to request MIDI SysEx permission.
+Open the localhost URL printed by Vite. Use a Chromium browser on HTTPS or localhost for Web MIDI. The browser games need the pad in MIDI mode: in the pad's own game menu, press the white button at the bottom-right twice. Then click **Connect BLOOPPAD** to request MIDI SysEx permission. Unplug and replug the pad to leave MIDI mode.
 
 ## Flash firmware
 
-Click **Flash firmware** to install an official release or a local `.bin` file. Disconnect the pad, hold its board boot button while reconnecting USB, then select the WCH bootloader when prompted. The app checks for the CH32X035G8U6 ISP ID before writing and verifies the flash after installation. WebUSB requires a compatible browser on HTTPS or localhost. On Windows, the bootloader may require a WinUSB driver.
+Open **Flash firmware** to install an official release or a local `.bin` file. With the pad in its game menu or in MIDI mode, choose **Over USB-MIDI**, click **Find pad**, then **Flash**: the page downloads the firmware, sends the firmware's reboot SysEx `F0 13 37 00 42 4F 4F F7`, and opens the WCH bootloader as soon as it appears (the first time, select it in Chrome's USB chooser). The bootloader returns to the firmware after a few seconds without an upload, so this happens in one click. If the firmware does not run, choose **Boot button**: disconnect the pad, hold its board boot button while reconnecting USB, then select the WCH bootloader when prompted. The app checks for the CH32X035G8U6 ISP ID before writing and verifies the flash after installation. WebUSB requires a compatible browser on HTTPS or localhost. On Windows, the bootloader may require a WinUSB driver.
 
 Published versions come from the [BLOOPPAD-MAXX GitHub releases API](https://github.com/phyx-be/BLOOPPAD-MAXX/releases) via the proxy's `proxy/api/releases.ts`, which the Vercel CDN caches for five minutes so visitors do not hit GitHub's 60-requests-per-hour unauthenticated limit. Without a configured proxy the browser queries GitHub directly. The browser verifies each downloaded binary against GitHub's release size and SHA-256 digest. GitHub's binary host does not allow the browser to read release assets across origins, so a narrow Vercel Function in `proxy/api/firmware.ts` retrieves only official `firmware.bin` assets by ID. Firmware is not bundled with the site. Local files never leave the browser.
 
@@ -39,7 +47,7 @@ At the end of Tetris or Snake, a brief pink impact pulse expands across the pads
 
 Use Start/Pause and Reset. Arrow keys move; Tetris uses Up to rotate, Down to soft drop and Space to hard drop. P toggles pause. Onscreen/hardware grid presses map the top third to Up, middle left/right to movement, and bottom third to Down. In Pixel studio, press a cell to paint; Enter also paints a focused cell. The app pauses on window blur.
 
-When a pad first connects, it shows a game menu on its LEDs. Tap the red top band for **Tug of war (two players)**, the blue middle band for **Connect four (two players)**, or the amber bottom band for **Tetris**. Both two-player choices use human players, with red as player one and blue as player two. Press both top corner buttons together during a game to reopen the menu, or use **Game menu** in the browser. The simulator mirrors the menu, and each connected pad shows the same three choices. The browser must remain connected; this menu does not run in the pad firmware.
+When a pad in MIDI mode first connects, the browser shows its own **browser menu** on the pad's LEDs (separate from the firmware's game menu). Tap the red top band for **Tug of war (two players)**, the blue middle band for **Connect four (two players)**, or the amber bottom band for **Tetris**. Both two-player choices use human players, with red as player one and blue as player two. Press both top corner buttons together during a game to reopen the menu, or use **Browser menu** in the browser. The simulator mirrors the menu, and each connected pad shows the same three choices. The browser must remain connected; this menu does not run in the pad firmware.
 
 ## Multiple pads
 
