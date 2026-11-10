@@ -15,8 +15,13 @@ import { MidiAdapter } from "../lib/midi";
 import { menuModeAt, renderDeviceMenu } from "../lib/deviceMenu";
 import { PadBed, PadShell } from "../components/PadShell";
 import { modes } from "../lib/modes";
+import { flagCount, mineCount } from "../lib/minesweeper";
 export function Playground({ initialMode }: { initialMode?: Mode }) {
-  const [engine] = useState(() => new Engine());
+  const [engine] = useState(() => {
+    const e = new Engine();
+    if (initialMode) e.configure(initialMode, 8, 8);
+    return e;
+  });
   const [mode, setMode] = useState<Mode>(initialMode ?? "tetris"),
     [count, setCount] = useState(1),
     [layout, setLayout] = useState("horizontal"),
@@ -531,13 +536,15 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                 : engine.over
                   ? mode === "lights"
                     ? "SOLVED · PRESS A PAD"
-                    : twoPlayer
-                      ? `${engine.winner === 3 ? "DRAW" : engine.winner === 1 ? "RED WINS" : "BLUE WINS"} · PRESS A PAD`
-                      : engine.endingPhase === "flash"
-                        ? "GAME OVER"
-                        : engine.endingPhase === "score"
-                          ? "YOUR FINAL SCORE"
-                          : "PLAY AGAIN · PRESS A PAD"
+                    : mode === "mines"
+                      ? `${engine.minesResult === "cleared" ? "CLEARED" : "BOOM"} · PRESS A PAD`
+                      : twoPlayer
+                        ? `${engine.winner === 3 ? "DRAW" : engine.winner === 1 ? "RED WINS" : "BLUE WINS"} · PRESS A PAD`
+                        : engine.endingPhase === "flash"
+                          ? "GAME OVER"
+                          : engine.endingPhase === "score"
+                            ? "YOUR FINAL SCORE"
+                            : "PLAY AGAIN · PRESS A PAD"
                   : engine.running
                     ? "LIVE PREVIEW"
                     : "READY TO PLAY"}
@@ -673,7 +680,10 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                 : engine.over
                   ? "Play again"
                   : "Start " +
-                    (mode === "tetris" || mode === "snake" || twoPlayer
+                    (mode === "tetris" ||
+                    mode === "snake" ||
+                    mode === "mines" ||
+                    twoPlayer
                       ? "game"
                       : "demo")}
             </button>
@@ -715,9 +725,11 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                   ? "Browser menu"
                   : mode === "tetris" || mode === "snake"
                     ? "The score"
-                    : twoPlayer
-                      ? "The match"
-                      : "Make it yours"}
+                    : mode === "mines"
+                      ? "The minefield"
+                      : twoPlayer
+                        ? "The match"
+                        : "Make it yours"}
               </h2>
             </div>
             {menuOpen ? (
@@ -886,6 +898,57 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                   3. Edges do not wrap. Adjacent pads share neighbors.
                 </p>
                 {notice && <small role="status">{notice}</small>}
+              </>
+            ) : mode === "mines" ? (
+              <>
+                <div className="font-display compact:text-3xl flex items-baseline gap-3 text-4xl font-medium tracking-wide tabular-nums">
+                  {engine.mines.count - flagCount(engine.mines)}
+                  <span className="text-dim font-sans text-[10px] tracking-widest">
+                    MINES LEFT
+                  </span>
+                </div>
+                <p className="text-muted mt-2 text-xs leading-5" role="status">
+                  {engine.over
+                    ? engine.minesResult === "cleared"
+                      ? "Cleared! Every safe cell is open. Press a pad to play again."
+                      : "Boom. That was a mine. Press a pad to play again."
+                    : !engine.mines.placed
+                      ? "Press any cell to start. The first one is always safe."
+                      : `${engine.mines.revealed.filter(Boolean).length} of ${engine.mines.mines.length - engine.mines.count} safe cells open.`}
+                </p>
+                <label className="text-nav mt-4 block text-[10px]">
+                  Difficulty
+                  <select
+                    className="border-line bg-surface text-app my-2 w-full border p-2.5 text-[11px]"
+                    value={engine.difficulty}
+                    onChange={(e) => {
+                      engine.difficulty = e.target.value as Difficulty;
+                      engine.reset();
+                      force();
+                    }}
+                  >
+                    {(["easy", "normal", "hard"] as const).map((d) => (
+                      <option key={d} value={d}>
+                        {d[0].toUpperCase() + d.slice(1)} ·{" "}
+                        {mineCount(d, engine.width, engine.height)} mines
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  className="border-line hover:bg-surface border px-3 py-2 text-[11px]"
+                  onClick={() => {
+                    engine.reset();
+                    force();
+                  }}
+                >
+                  New game
+                </button>
+                <p className="text-muted mt-4 text-xs leading-5">
+                  Press a cell to reveal it. Hold it for about 0.4 s to plant or
+                  remove a blinking yellow flag. Numbers count the mines around
+                  a cell: 1 blue, 2 green, 3 red.
+                </p>
               </>
             ) : mode === "lights" ? (
               <>
@@ -1257,9 +1320,11 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                   ? "Toggle cells, save your start, then press Start demo. Pause to step one generation at a time."
                   : mode === "lights"
                     ? "Tap a light to flip its cross. Use Tab and Enter to play with a keyboard."
-                    : twoPlayer
-                      ? "Pick the AI or a friend, then play on screen or on the pads together."
-                      : "Same controls on your screen and on your pad."}
+                    : mode === "mines"
+                      ? "Press to reveal, hold to flag. With a keyboard, Tab to a cell, then press or hold Enter."
+                      : twoPlayer
+                        ? "Pick the AI or a friend, then play on screen or on the pads together."
+                        : "Same controls on your screen and on your pad."}
             </p>
           </div>
         </div>

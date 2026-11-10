@@ -30,7 +30,7 @@ Endorsed companion to the BLOOPPAD-MAXX hardware project (github.com/phyx-be/BLO
 
 ## Capabilities and Constraints
 
-- Experiences: Tetris, Marquee, Snake, Game of Life, Lights Out, Rainbow, Pixel studio (up to 200 frames, JSON import/export), plus two-player tug of war and connect four.
+- Experiences: Tetris, Marquee, Snake, Game of Life, Lights Out, Minesweeper (firmware rules), Rainbow, Pixel studio (up to 200 frames, JSON import/export), plus two-player tug of war and connect four.
 - Everything is playable in the simulator without hardware (current behavior; not marked by the user as a binding commitment).
 - No server, accounts, audio or MIDI handshake. Edits are held in memory; export before reset.
 - Physical orientation, real pairing, throughput and reconnect behavior remain unverified on hardware.

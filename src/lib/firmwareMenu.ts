@@ -167,6 +167,7 @@ export const firmwareGames: FirmwareGame[] = [
       "8, 12 or 16 mines depending on difficulty.",
     ],
     ends: anyButtonToMenu,
+    browser: "mines",
   },
   {
     id: "lights-out",

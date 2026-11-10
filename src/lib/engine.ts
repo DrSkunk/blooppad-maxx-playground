@@ -12,6 +12,19 @@ import {
   reversiMoves,
 } from "./games.ts";
 import type { Cells, Difficulty, Player } from "./games.ts";
+import {
+  CLEAR,
+  HOLD_TO_FLAG,
+  MINE,
+  cleared,
+  mineCount,
+  newMines,
+  renderMines,
+  renderMinesEnding,
+  reveal,
+  toggleFlag,
+} from "./minesweeper.ts";
+import type { Mines } from "./minesweeper.ts";
 export type RGB = [number, number, number];
 export type Mode =
   | "tetris"
@@ -24,7 +37,8 @@ export type Mode =
   | "reversi"
   | "connect"
   | "tug"
-  | "masher";
+  | "masher"
+  | "mines";
 export const duelModes: Mode[] = ["tug", "masher"];
 export const twoPlayerModes: Mode[] = ["reversi", "connect", "tug", "masher"];
 /* Player one is red, player two is blue, everywhere on screen and on the pads. */
@@ -166,6 +180,17 @@ export class Engine {
   private aiReaction = 0;
   private aiMash = 0;
   legal = new Map<number, number[]>();
+  /* Minesweeper: board, result, and the one press being timed for press-or-hold. */
+  mines: Mines = newMines(8, 8, 12);
+  minesResult: "boom" | "cleared" | null = null;
+  private minesPress: {
+    key: string;
+    i: number;
+    t: number;
+    handled: boolean;
+  } | null = null;
+  /** Wall-clock seconds, independent of speed and pause, for blinking. */
+  private clock = 0;
   constructor() {
     this.reset();
   }
@@ -205,6 +230,7 @@ export class Engine {
     else if (this.mode === "reversi") this.newReversi();
     else if (this.mode === "connect") this.newConnect();
     else if (duelModes.includes(this.mode)) this.newDuel();
+    else if (this.mode === "mines") this.newMinesGame();
     else this.startingBoard = this.blank();
   }
   configure(mode: Mode, width: number, height: number) {
@@ -308,6 +334,10 @@ export class Engine {
   }
   onPad(row: number, col: number, pressed: boolean, source = "pad") {
     const key = `${source}:${row}:${col}`;
+    if (this.mode === "mines" && !this.over) {
+      this.padMines(key, row * this.width + col, pressed);
+      return;
+    }
     if (!pressed) {
       this.held.delete(key);
       return;
@@ -455,6 +485,34 @@ export class Engine {
     this.running = true;
     this.held.clear();
     this.saveStartingBoard();
+  }
+  newMinesGame() {
+    this.mines = newMines(
+      this.width,
+      this.height,
+      mineCount(this.difficulty, this.width, this.height),
+    );
+    this.minesResult = null;
+    this.minesPress = null;
+  }
+  /* Press starts timing; release reveals unless the hold already planted a flag. */
+  private padMines(key: string, i: number, pressed: boolean) {
+    if (pressed) {
+      if (this.held.has(key)) return;
+      this.held.add(key);
+      this.running = true;
+      if (!this.minesPress) this.minesPress = { key, i, t: 0, handled: false };
+      return;
+    }
+    this.held.delete(key);
+    const press = this.minesPress;
+    if (press?.key !== key) return;
+    this.minesPress = null;
+    if (press.handled || this.mines.flags[press.i]) return;
+    if (reveal(this.mines, press.i) === "boom") this.minesResult = "boom";
+    else if (cleared(this.mines)) this.minesResult = "cleared";
+    if (this.minesResult) this.finishGame();
+    else this.moves++;
   }
   private finishGame() {
     this.over = true;
@@ -715,6 +773,7 @@ export class Engine {
     this.checkRope();
   }
   update(dt: number) {
+    this.clock += dt;
     // Keep the score animation on the existing scheduler after gameplay stops.
     if (this.over) {
       this.scoreTime += dt;
@@ -723,6 +782,14 @@ export class Engine {
     if (!this.running) return;
     this.time += dt * this.speed;
     this.tick += dt * this.speed;
+    const press = this.minesPress;
+    if (this.mode === "mines" && press && !press.handled) {
+      press.t += dt;
+      if (press.t >= HOLD_TO_FLAG && !this.mines.revealed[press.i]) {
+        toggleFlag(this.mines, press.i);
+        press.handled = true;
+      }
+    }
     if (this.mode === "life") {
       while (this.tick >= 0.3) {
         this.tick -= 0.3;
@@ -795,6 +862,21 @@ export class Engine {
           ? teams[this.winner - 1]
           : [255, 255, 255],
       );
+    if (this.over && this.mode === "mines") {
+      const won = this.minesResult === "cleared";
+      if (this.scoreTime < 1.2)
+        return renderMinesEnding(
+          this.mines,
+          won,
+          Math.floor(this.scoreTime / 0.2) % 2 === 0,
+        );
+      return this.renderText(
+        won ? "CLEARED" : "BOOM",
+        this.scoreTime - 1.2 + this.width / 8,
+        won ? CLEAR : MINE,
+      );
+    }
+    if (this.mode === "mines") return renderMines(this.mines, this.clock);
     if (this.mode === "reversi" || this.mode === "connect")
       return this.renderBoard();
     if (duelModes.includes(this.mode)) return this.renderDuel();

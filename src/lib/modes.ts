@@ -52,6 +52,11 @@ export const modes: {
     desc: "Mash your half faster than your rival to pull the rope. It drifts back to the middle when you stop.",
   },
   {
+    id: "mines",
+    name: "Minesweeper",
+    desc: "The pad’s own Minesweeper: press to reveal, hold to flag. The first cell is always safe; clear every safe cell to win.",
+  },
+  {
     id: "rainbow",
     name: "Rainbow",
     desc: "A continuous animated color field across the whole canvas.",

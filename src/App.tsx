@@ -6,6 +6,7 @@ import { Flash } from "./tracks/Flash";
 import { Hardware } from "./tracks/Hardware";
 import { Hack } from "./tracks/Hack";
 import { REPO } from "./lib/links";
+import { modes } from "./lib/modes";
 import { ThemeToggle } from "./components/ThemeToggle";
 
 const tracks = [
@@ -108,7 +109,11 @@ export function App() {
         {track === "browser" && (
           <Playground
             key={route.sub}
-            initialMode={(route.sub || undefined) as Mode | undefined}
+            initialMode={
+              modes.some((m) => m.id === route.sub)
+                ? (route.sub as Mode)
+                : undefined
+            }
           />
         )}
         {track === "flash" && <Flash />}
