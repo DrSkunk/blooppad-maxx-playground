@@ -111,7 +111,7 @@ export function PadMap() {
                     onFocus={() => setFocusCell(`${row}-${col}`)}
                     onKeyDown={(e) => moveInGrid(e, row, col, [0, 7])}
                     onClick={() => press(row, col)}
-                    className={`pixel aspect-square min-w-0 border border-white/5 transition hover:brightness-125 active:scale-90 ${selected === game ? "outline-white outline-2 outline-offset-2" : ""}`}
+                    className={`pixel aspect-square min-w-0 border border-white/5 transition hover:brightness-125 active:scale-90 ${selected === game ? "outline-white outline-1 outline-offset-1" : ""}`}
                     style={style}
                   />
                 ) : (
@@ -252,7 +252,7 @@ function Manual({
                     <li key={g.id} className="flex items-center gap-2">
                       <span
                         aria-hidden="true"
-                        className="border-line size-2.5 border"
+                        className="border-dim size-2.5 border"
                         style={{ background: rgb(g.color) }}
                       />
                       <span className="text-nav">{g.name}</span>
@@ -287,7 +287,7 @@ function Manual({
           <p className="text-nav flex items-center gap-2 text-[11px]">
             <span
               aria-hidden="true"
-              className="border-line size-3 border"
+              className="border-dim size-3 border"
               style={{ background: rgb(game.color) }}
             />
             {game.row === 0 ? "Top" : "Bottom"} row · button {game.col + 1} ·{" "}

@@ -512,7 +512,8 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
               checked={orientation}
               onChange={(e) => setOrientation(e.target.checked)}
             />{" "}
-            Corner test: red ↖ · green ↗ · blue ↙ · white ↘
+            Corner test: red top-left · green top-right · blue bottom-left ·
+            white bottom-right
           </label>
           <small className="text-nav mt-3 block text-[10px]">
             Choose each physical unit’s input and output. Orientation must be
@@ -627,18 +628,35 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
           </div>
           {menuOpen ? (
             <div className="text-nav mx-3 mt-2 mb-7 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[10px]">
-              <span style={{ color: `rgb(${teams[0]})` }}>
+              <span>
+                <span
+                  aria-hidden="true"
+                  className="border-dim mr-1.5 inline-block size-2 border align-middle"
+                  style={{ background: `rgb(${teams[0]})` }}
+                />
                 Top: Tug of war · 2 players
               </span>
-              <span className="text-[#6799ff]">
+              <span>
+                <span
+                  aria-hidden="true"
+                  className="border-dim mr-1.5 inline-block size-2 border align-middle"
+                  style={{ background: `rgb(${teams[1]})` }}
+                />
                 Middle: Connect four · 2 players
               </span>
-              <span className="text-[#ffb74d]">Bottom: Tetris</span>
+              <span>
+                <span
+                  aria-hidden="true"
+                  className="border-dim mr-1.5 inline-block size-2 border align-middle"
+                  style={{ background: "#ffb74d" }}
+                />
+                Bottom: Tetris
+              </span>
             </div>
           ) : (
             <div className="text-dim mx-3 mt-1 mb-7 flex flex-wrap items-center justify-center gap-2 text-[10px]">
-              <span className="text-sm text-nav">↖</span> Click the pads or use
-              your keyboard <span className="bg-dim mx-1 size-1" />{" "}
+              Click the pads or use your keyboard{" "}
+              <span className="bg-dim mx-1 size-1" />{" "}
               {midi?.status === "Connected"
                 ? "SCREEN + HARDWARE IN SYNC"
                 : "HARDWARE OPTIONAL"}
@@ -651,10 +669,10 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
               disabled={menuOpen}
             >
               {engine.running
-                ? "Ⅱ Pause"
+                ? "Pause"
                 : engine.over
-                  ? "↻ Play again"
-                  : "▶ Start " +
+                  ? "Play again"
+                  : "Start " +
                     (mode === "tetris" || mode === "snake" || twoPlayer
                       ? "game"
                       : "demo")}
@@ -667,9 +685,6 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                 force();
               }}
             >
-              <span aria-hidden="true" className="text-sm leading-none">
-                ↻
-              </span>{" "}
               Reset
             </button>
             <button
@@ -707,13 +722,30 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
             </div>
             {menuOpen ? (
               <div className="space-y-3 text-xs leading-5">
-                <p style={{ color: `rgb(${teams[0]})` }}>
+                <p>
+                  <span
+                    aria-hidden="true"
+                    className="border-dim mr-1.5 inline-block size-2 border align-middle"
+                    style={{ background: `rgb(${teams[0]})` }}
+                  />
                   Top · Tug of war · 2 players
                 </p>
-                <p className="text-[#6799ff]">
+                <p>
+                  <span
+                    aria-hidden="true"
+                    className="border-dim mr-1.5 inline-block size-2 border align-middle"
+                    style={{ background: `rgb(${teams[1]})` }}
+                  />
                   Middle · Connect four · 2 players
                 </p>
-                <p className="text-[#ffb74d]">Bottom · Tetris</p>
+                <p>
+                  <span
+                    aria-hidden="true"
+                    className="border-dim mr-1.5 inline-block size-2 border align-middle"
+                    style={{ background: "#ffb74d" }}
+                  />
+                  Bottom · Tetris
+                </p>
                 <p className="text-muted border-line border-t pt-3 text-[10px]">
                   Tap any lit row on the pad. Press both top corners together to
                   open this menu during a game.
@@ -927,25 +959,29 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                 <div className="mt-4 flex gap-9">
                   <div>
                     <span className="text-nav text-[10px]">
+                      <span
+                        aria-hidden="true"
+                        className="border-dim mr-1.5 inline-block size-2 border align-middle"
+                        style={{ background: `rgb(${teams[0]})` }}
+                      />
                       Red {mode === "tug" ? "rounds" : scoreNoun}
                       {engine.opponent === "ai" ? " · you" : ""}
                     </span>
-                    <b
-                      className="font-display text-lg font-medium"
-                      style={{ color: `rgb(${teams[0]})` }}
-                    >
+                    <b className="font-display block text-lg font-medium">
                       {teamScores[0]}
                     </b>
                   </div>
                   <div>
                     <span className="text-nav text-[10px]">
+                      <span
+                        aria-hidden="true"
+                        className="border-dim mr-1.5 inline-block size-2 border align-middle"
+                        style={{ background: `rgb(${teams[1]})` }}
+                      />
                       Blue {mode === "tug" ? "rounds" : scoreNoun}
                       {engine.opponent === "ai" ? " · AI" : ""}
                     </span>
-                    <b
-                      className="font-display text-lg font-medium"
-                      style={{ color: `rgb(${teams[1]})` }}
-                    >
+                    <b className="font-display block text-lg font-medium">
                       {teamScores[1]}
                     </b>
                   </div>
@@ -1049,7 +1085,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                     <button
                       aria-label={i === 6 ? "Eraser" : `Color ${i + 1}`}
                       key={i}
-                      className={`size-6 border border-line ${color === i ? "outline-2 outline-offset-3 outline-app" : ""}`}
+                      className={`size-6 border border-dim ${color === i ? "outline-2 outline-offset-3 outline-app" : ""}`}
                       style={{ background: `rgb(${c})` }}
                       onClick={() => {
                         setColor(i);
@@ -1081,7 +1117,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                       force();
                     }}
                   >
-                    {engine.playback ? "Edit pixels" : "▶ Play frames"}
+                    {engine.playback ? "Edit pixels" : "Play frames"}
                   </button>
                   <button onClick={exportFrames}>↓ Export JSON</button>
                   <label className="border-line cursor-pointer border px-1 py-2 text-center text-[10px]">

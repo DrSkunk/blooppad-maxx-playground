@@ -33,12 +33,13 @@ export function PadShell({
         ))}
       {children}
       {label && (
-        <div className="font-display text-pad-text mt-3 text-center text-[9px] tracking-[0.28em]">
-          BLOOPPAD <b className="ml-1 text-[8px] tracking-wide">MAXX</b>
+        <div className="font-display text-pad-text mt-3 text-center text-[10px] tracking-[0.28em]">
+          BLOOPPAD <b className="ml-1 tracking-wide">MAXX</b>
           {power && (
-            <span aria-hidden="true" className="absolute right-6 text-[8px]">
-              ●
-            </span>
+            <span
+              aria-hidden="true"
+              className="bg-pad-text absolute right-6 mt-1 size-1"
+            />
           )}
         </div>
       )}

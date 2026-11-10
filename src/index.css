@@ -121,6 +121,33 @@
   }
 }
 
+/* Pad cells sit on the always-dark pad, so their focus ring is white in both schemes. */
+.pixel:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+/* Square range sliders: native thumbs ignore border-radius on the input itself. */
+input[type="range"] {
+  appearance: none;
+  height: 4px;
+  background: var(--color-line);
+}
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--color-app);
+  border: 0;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: var(--color-app);
+  border: 0;
+  border-radius: 0;
+}
+
 /* Rectangles only: no rounded corners anywhere. Unlayered, so it beats utilities. */
 *,
 ::before,

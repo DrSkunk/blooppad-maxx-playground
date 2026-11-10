@@ -303,7 +303,7 @@ Any panel where the user acts on a physical device (MIDI connection, device mapp
 - **Error:** inline `role="alert"` text in Danger; no field outline change.
 
 ### Navigation
-- **Track bar:** 12px medium Nav links, 8px × 12px. Hover fills Surface with Foreground text; the current track inverts (`aria-current="page"`). The brand lockup (a drawn 4 × 4 square mark: top and bottom rows solid, middle rows at 35%, echoing the firmware menu) sits left. On the right: the theme button (Auto / Light / Dark, a half-filled square icon) and a bordered "Hardware repo ↗" link above 1150px.
+- **Track bar:** 12px medium Nav links, 8px × 12px. Hover fills Surface with Foreground text; the current track inverts (`aria-current="page"`). The brand lockup (a drawn 4 × 4 square mark: top and bottom rows solid, middle rows at 35%, echoing the firmware menu) sits left. On the right: the theme button (Auto / Light / Dark, a half-filled square icon) and a bordered "Hardware repo ↗" link above 1150px. Below 650px the links move to their own full-width second row with short labels (Menu, Games, Flash, Hardware, Hack), and the current track is scrolled into view.
 - **Experience strip (Browser games):** the same treatment at 10px × 12px, wrapping, under a Line Soft rule.
 - **Row links:** full-width rows (title →, description, dim meta) whose hover fills Card.
 
@@ -319,6 +319,9 @@ A 52px strip above the pads under a Line Soft rule: a square Success dot and the
 ## Do's and Don'ts
 
 ### Do:
+- **Do** name LED colors in text with a square swatch (1px `dim` hairline) beside plain foreground text; LED hues as text color fail contrast on white.
+- **Do** keep sliders square: a 4px `line` track and a 12px square `app` thumb.
+- **Do** give pad cells a white focus ring (2px, offset 3px) in both schemes, distinct from the 1px selected outline.
 - **Do** keep the chrome monochrome: `app`, `canvas`, the grey tokens, and `danger` for errors only.
 - **Do** define every chrome color as a dark default with a `prefers-color-scheme: light` override; never hard-code black or white.
 - **Do** show selected, current and primary by inverting: Foreground fill, Canvas text.

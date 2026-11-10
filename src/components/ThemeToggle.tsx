@@ -43,31 +43,52 @@ export function ThemeToggle() {
       /* storage unavailable: the choice lasts for this page view */
     }
   }, [theme]);
+  // Follow a change made in another open tab.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "theme" || e.key === null) setTheme(stored());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+  const [changed, setChanged] = useState(false);
   const next = order[(order.indexOf(theme) + 1) % order.length];
   return (
-    <button
-      type="button"
-      onClick={() => setTheme(next)}
-      aria-label={`Color theme: ${names[theme]}${theme === "auto" ? " (follows your system)" : ""}. Switch to ${names[next]}.`}
-      className="border-line text-nav hover:text-app compact:px-2.5 flex shrink-0 items-center gap-2 border px-3 py-2 text-[11px]"
-    >
-      <svg aria-hidden="true" viewBox="0 0 12 12" className="size-3">
-        <rect
-          x="0.5"
-          y="0.5"
-          width="11"
-          height="11"
-          fill="none"
-          stroke="currentColor"
-        />
-        {theme !== "light" && (
-          <rect x="6" y="1" width="5" height="10" fill="currentColor" />
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          setTheme(next);
+          setChanged(true);
+        }}
+        title={`Switch to ${names[next]}`}
+        className="border-line text-nav hover:text-app flex shrink-0 items-center gap-2 border px-3 py-2 text-[11px]"
+      >
+        <svg aria-hidden="true" viewBox="0 0 12 12" className="size-3">
+          <rect
+            x="0.5"
+            y="0.5"
+            width="11"
+            height="11"
+            fill="none"
+            stroke="currentColor"
+          />
+          {theme !== "light" && (
+            <rect x="6" y="1" width="5" height="10" fill="currentColor" />
+          )}
+          {theme === "dark" && (
+            <rect x="1" y="1" width="5" height="10" fill="currentColor" />
+          )}
+        </svg>
+        <span className="sr-only">Color theme: </span>
+        {names[theme]}
+        {theme === "auto" && (
+          <span className="sr-only"> (follows your system)</span>
         )}
-        {theme === "dark" && (
-          <rect x="1" y="1" width="5" height="10" fill="currentColor" />
-        )}
-      </svg>
-      <span className="compact:hidden">{names[theme]}</span>
-    </button>
+      </button>
+      <span role="status" className="sr-only">
+        {changed ? `Color theme: ${names[theme]}` : ""}
+      </span>
+    </>
   );
 }
