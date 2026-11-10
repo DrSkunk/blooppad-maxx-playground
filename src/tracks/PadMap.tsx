@@ -8,6 +8,8 @@ import {
 } from "../lib/firmwareMenu";
 import { fetchReleases } from "../lib/firmware";
 import { links } from "../lib/links";
+import { moveInGrid } from "../lib/roving";
+import { PadBed, PadShell } from "../components/PadShell";
 
 const rgb = (c: RGB) => `rgb(${c.join(",")})`;
 
@@ -52,6 +54,7 @@ function useLatestRelease() {
 export function PadMap() {
   const [selected, setSelected] = useState<FirmwareGame | null>(null);
   const [started, setStarted] = useState(false);
+  const [focusCell, setFocusCell] = useState("0-0");
   const frame = useMenuFrame(selected);
   const latest = useLatestRelease();
 
@@ -80,23 +83,11 @@ export function PadMap() {
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,34rem)_minmax(0,1fr)]">
         <div>
-          <div className="border-pad bg-pad-shell compact:px-3 compact:pt-4 relative rounded-2xl border px-6 pt-6 pb-3">
-            {[
-              "top-2.5 left-2.5",
-              "top-2.5 right-2.5",
-              "bottom-2.5 left-2.5",
-              "right-2.5 bottom-2.5",
-            ].map((pos) => (
-              <span
-                key={pos}
-                aria-hidden="true"
-                className={`bg-pad-bed border-pad absolute size-1 rounded-full border ${pos}`}
-              />
-            ))}
-            <div
+          <PadShell className="compact:px-3 compact:pt-4 px-6 pt-6 pb-3">
+            <PadBed
               role="group"
               aria-label="Firmware game menu"
-              className="bg-pad-bed compact:gap-1 grid grid-cols-8 gap-2 rounded-lg border border-black p-2"
+              className="compact:gap-1 gap-2 p-2"
             >
               {frame.map((c, i) => {
                 const row = Math.floor(i / 8),
@@ -115,27 +106,25 @@ export function PadMap() {
                     type="button"
                     aria-label={`${game.name}, ${game.row === 0 ? "top" : "bottom"} row, button ${game.col + 1}`}
                     aria-pressed={selected === game}
+                    data-cell={`${row}-${col}`}
+                    tabIndex={focusCell === `${row}-${col}` ? 0 : -1}
+                    onFocus={() => setFocusCell(`${row}-${col}`)}
+                    onKeyDown={(e) => moveInGrid(e, row, col, [0, 7])}
                     onClick={() => press(row, col)}
-                    className={`pixel aspect-square min-w-0 rounded-sm border border-white/5 transition hover:brightness-125 active:scale-90 ${selected === game ? "outline-white outline-2 outline-offset-2" : ""}`}
+                    className={`pixel aspect-square min-w-0 border border-white/5 transition hover:brightness-125 active:scale-90 ${selected === game ? "outline-white outline-2 outline-offset-2" : ""}`}
                     style={style}
                   />
                 ) : (
                   <span
                     key={i}
                     aria-hidden="true"
-                    className="pixel aspect-square min-w-0 rounded-sm border border-white/5"
+                    className="pixel aspect-square min-w-0 border border-white/5"
                     style={style}
                   />
                 );
               })}
-            </div>
-            <div className="font-display text-pad-text mt-3 text-center text-[9px] tracking-[0.28em]">
-              BLOOPPAD{" "}
-              <b className="ml-1 text-[8px] tracking-wide text-pad-text">
-                MAXX
-              </b>
-            </div>
-          </div>
+            </PadBed>
+          </PadShell>
           <p className="text-dim mt-3 text-[11px] leading-5">
             Mirrors the menu in firmware {latest || "v2"}. Text scrolls at the
             pad’s own speed and font.
@@ -153,7 +142,7 @@ export function PadMap() {
         <h2 id="next" className="text-app text-sm font-semibold">
           Beyond the menu
         </h2>
-        <ul className="border-line mt-4 divide-y divide-[var(--color-line)] rounded-xl border">
+        <ul className="border-line mt-4 divide-y divide-[var(--color-line)] border">
           {[
             {
               href: "#/browser",
@@ -213,7 +202,7 @@ function Manual({
   if (!game)
     return (
       <article
-        className="border-line bg-card rounded-xl border p-6 text-xs leading-5"
+        className="border-line bg-card border p-6 text-xs leading-5"
         aria-live="polite"
       >
         <h2 className="font-display text-xl font-semibold">
@@ -290,7 +279,7 @@ function Manual({
   const isMidi = game.id === "midi";
   return (
     <article
-      className={`rounded-xl border p-6 text-xs leading-5 ${isMidi ? "border-line-strong bg-canvas" : "border-line bg-card"}`}
+      className={` border p-6 text-xs leading-5 ${isMidi ? "border-line-strong bg-canvas" : "border-line bg-card"}`}
       aria-live="polite"
     >
       <div className="flex items-start justify-between gap-4">
@@ -312,14 +301,14 @@ function Manual({
         <button
           type="button"
           onClick={onClear}
-          className="border-line text-nav hover:text-app rounded-md border px-3 py-1.5 text-[11px]"
+          className="border-line text-nav hover:text-app border px-3 py-1.5 text-[11px]"
         >
           All games
         </button>
       </div>
 
       <p
-        className={`mt-5 rounded-md px-3 py-2 ${started ? "bg-app text-canvas" : "bg-canvas text-nav"}`}
+        className={`mt-5 px-3 py-2 ${started ? "bg-app text-canvas" : "bg-canvas text-nav"}`}
         role="status"
       >
         {started
@@ -347,13 +336,13 @@ function Manual({
           <>
             <a
               href="#/browser"
-              className="bg-app text-canvas hover:bg-app/85 rounded-md px-4 py-2.5 text-xs font-bold"
+              className="bg-app text-canvas hover:bg-app/85 px-4 py-2.5 text-xs font-bold"
             >
               Open browser games
             </a>
             <a
               href="#/hack"
-              className="border-line hover:bg-surface rounded-md border px-3 py-2.5 text-[11px]"
+              className="border-line hover:bg-surface border px-3 py-2.5 text-[11px]"
             >
               MIDI protocol
             </a>
@@ -361,7 +350,7 @@ function Manual({
               href={links.scratcher}
               target="_blank"
               rel="noreferrer"
-              className="border-line hover:bg-surface rounded-md border px-3 py-2.5 text-[11px]"
+              className="border-line hover:bg-surface border px-3 py-2.5 text-[11px]"
             >
               Fri3d Scratcher ↗
             </a>
@@ -370,7 +359,7 @@ function Manual({
           <>
             <a
               href={`#/browser/${game.browser}`}
-              className="border-line hover:bg-surface rounded-md border px-3 py-2.5 text-[11px]"
+              className="border-line hover:bg-surface border px-3 py-2.5 text-[11px]"
             >
               Play the browser version
             </a>

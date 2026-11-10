@@ -8,6 +8,8 @@ A browser companion for the [BLOOPPAD-MAXX](https://github.com/phyx-be/BLOOPPAD-
 - **Hardware**: how the board is built, specifications, expansion header, revisions and links to the schematic, Gerbers, BOM and mechanical files.
 - **Hack**: button and LED addresses, SysEx frames, the bootloader command, I²C, UART and building the firmware.
 
+The interface is black and white and follows the system light/dark setting; the **Auto / Light / Dark** button in the top bar overrides it for this browser. Hardware photos in `public/media/` come from the hardware repo and are credited on the Hardware page.
+
 Routes are hash-based (`#/`, `#/browser`, `#/browser/<mode>`, `#/flash`, `#/hardware`, `#/hack`) so GitHub Pages needs no rewrites.
 
 ## Run

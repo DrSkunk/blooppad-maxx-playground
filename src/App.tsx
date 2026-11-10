@@ -6,6 +6,7 @@ import { Flash } from "./tracks/Flash";
 import { Hardware } from "./tracks/Hardware";
 import { Hack } from "./tracks/Hack";
 import { REPO } from "./lib/links";
+import { ThemeToggle } from "./components/ThemeToggle";
 
 const tracks = [
   { path: "", label: "Pad menu" },
@@ -79,17 +80,18 @@ export function App() {
                 key={t.path}
                 href={`#/${t.path}`}
                 aria-current={track === t.path ? "page" : undefined}
-                className={`rounded-md px-3 py-2 text-[12px] font-medium whitespace-nowrap transition-colors ${track === t.path ? "bg-app text-canvas" : "text-nav hover:bg-surface hover:text-app"}`}
+                className={` px-3 py-2 text-[12px] font-medium whitespace-nowrap transition-colors ${track === t.path ? "bg-app text-canvas" : "text-nav hover:bg-surface hover:text-app"}`}
               >
                 {t.label}
               </a>
             ))}
           </nav>
+          <ThemeToggle />
           <a
             href={REPO}
             target="_blank"
             rel="noreferrer"
-            className="border-line text-nav hover:text-app laptop:hidden shrink-0 rounded-md border px-3 py-2 text-[11px]"
+            className="border-line text-nav hover:text-app laptop:hidden shrink-0 border px-3 py-2 text-[11px]"
           >
             Hardware repo ↗
           </a>

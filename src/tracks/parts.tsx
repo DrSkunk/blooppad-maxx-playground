@@ -20,7 +20,7 @@ export function PageHead({
 
 export function Code({ children }: { children: ReactNode }) {
   return (
-    <pre className="border-line bg-canvas text-app mt-2 overflow-x-auto rounded-md border px-3 py-2 font-mono text-[11px] leading-5">
+    <pre className="border-line bg-canvas text-app mt-2 overflow-x-auto border px-3 py-2 font-mono text-[11px] leading-5">
       <code>{children}</code>
     </pre>
   );

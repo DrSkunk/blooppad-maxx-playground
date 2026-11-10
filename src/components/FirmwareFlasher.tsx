@@ -211,11 +211,11 @@ export function FirmwareFlasher() {
   const stepHead = "text-[13px] font-semibold text-app";
   const stepNum = "font-display text-app mr-2 tabular-nums";
   const choice = (active: boolean) =>
-    `rounded-md border px-3 py-2 text-[11px] ${active ? "border-app bg-app text-canvas" : "border-line text-app hover:bg-surface"}`;
+    ` border px-3 py-2 text-[11px] ${active ? "border-app bg-app text-canvas" : "border-line text-app hover:bg-surface"}`;
 
   return (
     <section
-      className="border-line-strong bg-canvas rounded-xl border p-6 text-xs leading-5"
+      className="border-line-strong bg-canvas border p-6 text-xs leading-5"
       aria-label="Flash firmware"
     >
       <div className={step}>
@@ -260,7 +260,7 @@ export function FirmwareFlasher() {
                   type="button"
                   disabled={busy || finding}
                   onClick={() => void findPad()}
-                  className="border-line-strong hover:bg-surface rounded-md border px-3 py-2 text-[11px]"
+                  className="border-line-strong hover:bg-surface border px-3 py-2 text-[11px]"
                 >
                   {finding
                     ? "Looking…"
@@ -274,7 +274,7 @@ export function FirmwareFlasher() {
                     value={pad?.id ?? ""}
                     disabled={busy}
                     onChange={(e) => setPadId(e.target.value)}
-                    className="border-line bg-surface rounded-md border p-2 text-[11px] text-app"
+                    className="border-line bg-surface border p-2 text-[11px] text-app"
                   >
                     {pads.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -287,7 +287,7 @@ export function FirmwareFlasher() {
                     className="text-success flex items-center gap-2"
                     role="status"
                   >
-                    <span className="bg-success size-1.5 rounded-full" />
+                    <span className="bg-success size-1.5" />
                     {pad.name} found
                   </span>
                 ) : null}
@@ -381,7 +381,7 @@ export function FirmwareFlasher() {
                   onChange={(event) =>
                     setSelectedId(Number(event.target.value))
                   }
-                  className="border-line bg-surface mt-2 w-full rounded-md border p-2.5 text-app"
+                  className="border-line bg-surface mt-2 w-full border p-2.5 text-app"
                 >
                   {releases.map((item, i) => (
                     <option key={item.assetId} value={item.assetId}>
@@ -412,7 +412,7 @@ export function FirmwareFlasher() {
                 type="file"
                 accept=".bin,application/octet-stream"
                 disabled={busy}
-                className="border-line bg-surface mt-2 block w-full rounded-md border p-2.5 text-app file:mr-3 file:border-0 file:bg-transparent file:text-app"
+                className="border-line bg-surface mt-2 block w-full border p-2.5 text-app file:mr-3 file:border-0 file:bg-transparent file:text-app"
                 onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               />
             </label>
@@ -448,7 +448,7 @@ export function FirmwareFlasher() {
                 (source === "release" ? !release || !proxyConfigured : !file) ||
                 (route === "midi" && !pad)
               }
-              className="bg-app text-canvas hover:bg-app/85 rounded-md px-5 py-3 text-xs font-bold"
+              className="bg-app text-canvas hover:bg-app/85 px-5 py-3 text-xs font-bold"
             >
               {busy ? "Flashing…" : "Flash firmware"}
             </button>

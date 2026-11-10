@@ -28,11 +28,6 @@
   --color-pixel: #1a1a1a;
   --color-pad-text: #8a8a8a;
 
-  --spacing-sidebar: 14.875rem;
-  --spacing-sidebar-sm: 12.5rem;
-  --spacing-main: calc(100% - 14.875rem);
-  --spacing-main-laptop: calc(100% - 12.5rem);
-  --spacing-main-tablet: calc(100% - 4.75rem);
 
   --grid-template-columns-workspace: minmax(0, 1fr) 16.5rem;
   --grid-template-columns-workspace-sm: minmax(0, 1fr) 14.6875rem;
@@ -44,8 +39,9 @@
 @custom-variant compact (@media (width < 40.625rem));
 @custom-variant wide (@media (width >= 90.625rem));
 
+/* Light values: when the system prefers light (unless the user picked dark), or when the user picked light. */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
     --color-app: #000000;
     --color-canvas: #ffffff;
     --color-sidebar: #ffffff;
@@ -62,7 +58,32 @@
     --color-danger: #b91c1c;
     --color-pad: #000000;
     --color-pad-shell: #141414;
+    color-scheme: light;
   }
+}
+
+:root[data-theme="light"] {
+  --color-app: #000000;
+  --color-canvas: #ffffff;
+  --color-sidebar: #ffffff;
+  --color-panel: #ffffff;
+  --color-card: #ffffff;
+  --color-surface: #f2f2f2;
+  --color-line: #d4d4d4;
+  --color-line-soft: #e5e5e5;
+  --color-line-strong: #000000;
+  --color-nav: #404040;
+  --color-muted: #525252;
+  --color-dim: #6b6b6b;
+  --color-success: #000000;
+  --color-danger: #b91c1c;
+  --color-pad: #000000;
+  --color-pad-shell: #141414;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 @layer base {

@@ -186,7 +186,7 @@ Controls stay dense and exact: dimensions, pad counts, port IDs, versions and sc
 
 ## Colors
 
-Black, white and a short grey ladder, with every token defined twice: the unsuffixed value is the dark default, the `-light` value applies under `prefers-color-scheme: light`.
+Black, white and a short grey ladder, with every token defined twice: the unsuffixed value is the dark default, the `-light` value applies under `prefers-color-scheme: light`. A manual override sets `data-theme="light"` or `"dark"` on the root element and wins over the system; without it the system decides.
 
 ### Primary
 - **Foreground** (`app` / `app-light`): body text, headings, the primary button fill, the inverted active state (track bar, experience strip, segmented options, source choices, value chips), the focus outline, `accent-color` for ranges and checkboxes, and text selection.
@@ -303,15 +303,15 @@ Any panel where the user acts on a physical device (MIDI connection, device mapp
 - **Error:** inline `role="alert"` text in Danger; no field outline change.
 
 ### Navigation
-- **Track bar:** 12px medium Nav links, 8px × 12px. Hover fills Surface with Foreground text; the current track inverts (`aria-current="page"`). The brand lockup sits left; a bordered "Hardware repo ↗" link sits right above 1150px.
+- **Track bar:** 12px medium Nav links, 8px × 12px. Hover fills Surface with Foreground text; the current track inverts (`aria-current="page"`). The brand lockup (a drawn 4 × 4 square mark: top and bottom rows solid, middle rows at 35%, echoing the firmware menu) sits left. On the right: the theme button (Auto / Light / Dark, a half-filled square icon) and a bordered "Hardware repo ↗" link above 1150px.
 - **Experience strip (Browser games):** the same treatment at 10px × 12px, wrapping, under a Line Soft rule.
 - **Row links:** full-width rows (title →, description, dim meta) whose hover fills Card.
 
 ### Firmware Menu Map (signature)
-The home screen. A simulated pad renders the real firmware menu frame: the 8 original games on the top row and 7 newer games plus MIDI on the bottom row, in their firmware colors, with the firmware's own 5-row font scrolling "CHOOSE GAME" or the selected name. Only the 16 menu cells are buttons; the selected one blinks and carries a 2px Foreground outline. The manual panel beside it names position, players, how to play and how it ends, with a square swatch beside the color name; a status line inverts once the game is "started". MIDI switches the panel to the Hardware Panel treatment. Reduced motion freezes the scroll.
+The home screen. A simulated pad renders the real firmware menu frame: the 8 original games on the top row and 7 newer games plus MIDI on the bottom row, in their firmware colors, with the firmware's own 5-row font scrolling "CHOOSE GAME" or the selected name. Only the 16 menu cells are buttons, with a single tab stop: arrow keys move between them (Up/Down jump between the two menu rows), Enter or Space selects. The selected one blinks and carries a 2px white outline, white in both schemes because the pad is always dark. The manual panel beside it names position, players, how to play and how it ends, with a square swatch beside the color name; a status line inverts once the game is "started". MIDI switches the panel to the Hardware Panel treatment. Reduced motion freezes the scroll.
 
 ### Simulated Pad (signature)
-A Pad Shell body with a 1px Pad border and four corner screws, a recessed Pad Bed with a black hairline, and an 8 × 8 grid of square Pixel buttons with a white/5 hairline, captioned "BLOOPPAD MAXX" in tracked Space Grotesk with Pad Text. Lit pixels take the exact LED RGB plus the LED halo. Hover brightens the pixel; press scales it to 90%. The simulator shows the same frame the hardware receives.
+One component (`PadShell` and `PadBed` in `src/components/PadShell.tsx`) for every simulated pad: home, browser games and the Hack address picker. A Pad Shell body with a 1px Pad border and four corner screws, a recessed Pad Bed with a black hairline, and an 8 × 8 grid of square Pixel buttons with a white/5 hairline, captioned "BLOOPPAD MAXX" in tracked Space Grotesk with Pad Text. Lit pixels take the exact LED RGB plus the LED halo. Hover brightens the pixel; press scales it to 90%. The simulator shows the same frame the hardware receives. Grids of pixel buttons use one tab stop with arrow-key movement.
 
 ### Stage Status Bar
 A 52px strip above the pads under a Line Soft rule: a square Success dot and the state in tracked label type on the left, canvas dimensions and pad count on the right.

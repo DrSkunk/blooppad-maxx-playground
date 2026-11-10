@@ -13,91 +13,8 @@ import type { Mode, RGB } from "../lib/engine";
 import type { Difficulty } from "../lib/games.ts";
 import { MidiAdapter } from "../lib/midi";
 import { menuModeAt, renderDeviceMenu } from "../lib/deviceMenu";
-const modes: {
-  id: Mode;
-  name: string;
-  label: string;
-  icon: string;
-  desc: string;
-}[] = [
-  {
-    id: "tetris",
-    name: "Tetris",
-    label: "STACK & CLEAR",
-    icon: "▟",
-    desc: "Seven tetrominoes with wall kicks, soft and hard drops, a next-piece preview and rising speed.",
-  },
-  {
-    id: "scroller",
-    name: "Marquee",
-    label: "SAY IT IN PIXELS",
-    icon: "≋",
-    desc: "Scrolls your text across every connected pad in a 5×7 font, or plays a rainbow wave or color ripple.",
-  },
-  {
-    id: "snake",
-    name: "Snake",
-    label: "ONE MORE BITE",
-    icon: "⌁",
-    desc: "Eat the food, grow, and avoid your own tail. Edges wrap by default; turn that off in the score panel.",
-  },
-  {
-    id: "life",
-    name: "Game of Life",
-    label: "LET IT GROW",
-    icon: "✣",
-    desc: "Conway’s B3/S23 rules. Toggle cells while it runs, step one generation, seed a glider or random board, and save a starting pattern.",
-  },
-  {
-    id: "lights",
-    name: "Lights Out",
-    label: "FIND THE SWITCH",
-    icon: "☷",
-    desc: "Pressing a cell flips it and its four neighbors. Turn every light off. Every puzzle is solvable.",
-  },
-  {
-    id: "reversi",
-    name: "Reversi",
-    label: "FLIP THE BOARD",
-    icon: "◐",
-    desc: "Place a disc to flip every opponent line you trap. Most discs at the end wins.",
-  },
-  {
-    id: "connect",
-    name: "Connect four",
-    label: "LINE THEM UP",
-    icon: "◍",
-    desc: "Drop a piece in any column. Four in a row across, down or diagonally wins.",
-  },
-  {
-    id: "tug",
-    name: "Tug of war",
-    label: "FASTEST FINGER",
-    icon: "⇄",
-    desc: "After a random wait a light appears on each side. First to hit theirs pulls the rope; pressing early loses the round.",
-  },
-  {
-    id: "masher",
-    name: "Button masher",
-    label: "MASH TO WIN",
-    icon: "⚡\uFE0E",
-    desc: "Mash your half faster than your rival to pull the rope. It drifts back to the middle when you stop.",
-  },
-  {
-    id: "rainbow",
-    name: "Rainbow",
-    label: "JUST GOOD WAVES",
-    icon: "◉",
-    desc: "A continuous animated color field across the whole canvas.",
-  },
-  {
-    id: "paint",
-    name: "Pixel studio",
-    label: "MAKE YOUR MARK",
-    icon: "✳\uFE0E",
-    desc: "Paint pixels, save up to 200 frames, play them back, and import or export JSON.",
-  },
-];
+import { PadBed, PadShell } from "../components/PadShell";
+import { modes } from "../lib/modes";
 export function Playground({ initialMode }: { initialMode?: Mode }) {
   const [engine] = useState(() => new Engine());
   const [mode, setMode] = useState<Mode>(initialMode ?? "tetris"),
@@ -461,7 +378,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
         </div>
         <ol
           aria-label="Connect your pad"
-          className="border-line-strong bg-canvas space-y-3 rounded-xl border p-5 text-xs leading-5"
+          className="border-line-strong bg-canvas space-y-3 border p-5 text-xs leading-5"
         >
           <li className="flex gap-3">
             <span className="font-display text-app tabular-nums">1</span>
@@ -481,7 +398,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
           <li className="flex flex-wrap items-center gap-3">
             <span className="font-display text-app tabular-nums">3</span>
             <button
-              className="border-line-strong hover:bg-surface rounded-md border px-3 py-2 text-[11px]"
+              className="border-line-strong hover:bg-surface border px-3 py-2 text-[11px]"
               onClick={() => {
                 setDevices(!devices);
                 if (!midi?.access) void midi?.connect();
@@ -497,7 +414,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
               role="status"
             >
               <span
-                className={`inline-block size-1.5 shrink-0 rounded-full ${midi?.status === "Connected" ? "bg-success" : "bg-dim"}`}
+                className={`inline-block size-1.5 shrink-0 ${midi?.status === "Connected" ? "bg-success" : "bg-dim"}`}
               />
               {midi?.status === "Connected"
                 ? "Hardware connected"
@@ -518,7 +435,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
           <button
             key={m.id}
             aria-current={mode === m.id && !menuOpen ? "page" : undefined}
-            className={`flex flex-none items-center gap-2 rounded-lg px-3 py-2.5 text-[12px] font-medium whitespace-nowrap transition-colors hover:bg-surface ${mode === m.id && !menuOpen ? "bg-app text-canvas" : "text-nav"}`}
+            className={`flex flex-none items-center gap-2 px-3 py-2.5 text-[12px] font-medium whitespace-nowrap transition-colors hover:bg-surface ${mode === m.id && !menuOpen ? "bg-app text-canvas" : "text-nav"}`}
             onClick={() => configure(m.id)}
           >
             {m.name}
@@ -537,7 +454,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
       </section>
       {!devices && midi.error && (
         <div
-          className="border-line-strong bg-canvas mb-5 rounded-xl border p-5 text-xs"
+          className="border-line-strong bg-canvas mb-5 border p-5 text-xs"
           role="alert"
         >
           {midi.error}{" "}
@@ -547,11 +464,11 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
         </div>
       )}
       {devices && (
-        <section className="border-line-strong bg-canvas mb-5 rounded-xl border p-5 text-xs">
+        <section className="border-line-strong bg-canvas mb-5 border p-5 text-xs">
           <div className="flex justify-between">
             Device connections{" "}
             <button
-              className="border-line-strong rounded-md border px-2 py-1.5"
+              className="border-line-strong border px-2 py-1.5"
               onClick={() => void midi?.connect()}
             >
               Retry connection
@@ -572,7 +489,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                 <label className="flex-1" key={type}>
                   {type}
                   <select
-                    className="border-line bg-surface my-2 w-full rounded-md border p-2.5 text-[11px] text-app"
+                    className="border-line bg-surface my-2 w-full border p-2.5 text-[11px] text-app"
                     value={midi?.slots[i]?.[type] ?? ""}
                     onChange={(e) => midi?.assign(i, type, e.target.value)}
                   >
@@ -604,10 +521,10 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
         </section>
       )}
       <div className="compact:flex compact:flex-col grid grid-cols-workspace items-start gap-5 laptop:grid-cols-workspace-sm laptop:gap-4 tablet:grid-cols-workspace-tablet">
-        <section className="border-line bg-panel compact:w-full overflow-hidden rounded-xl border">
+        <section className="border-line bg-panel compact:w-full overflow-hidden border">
           <div className="border-line-soft text-nav flex h-13 items-center justify-between border-b px-5 text-[10px] tracking-widest">
             <span className="flex items-center gap-2">
-              <span className="bg-success size-1.5 rounded-full" />
+              <span className="bg-success size-1.5" />
               {menuOpen
                 ? "BROWSER MENU · TAP A BAND"
                 : engine.over
@@ -626,7 +543,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
             </span>
             <span className="flex items-center gap-2">
               {engine.width} × {engine.height}
-              <i className="bg-dim mx-1 size-1 rounded-full" /> {count}{" "}
+              <i className="bg-dim mx-1 size-1" /> {count}{" "}
               {count === 1 ? "PAD" : "PADS"}
             </span>
           </div>
@@ -640,13 +557,12 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
               }}
             >
               {Array.from({ length: count }, (_, p) => (
-                <div
-                  className="pad-shell border-pad bg-pad-shell compact:max-w-77 compact:has-[~.pad-shell]:px-2 compact:has-[~.pad-shell]:pt-4 compact:has-[~.pad-shell]:pb-2 laptop:px-4 laptop:pt-5 laptop:pb-3 wide:max-w-97 relative w-full max-w-86 min-w-0 rounded-2xl border px-6 pt-6 pb-3"
+                <PadShell
+                  power
                   key={p}
+                  className="pad-shell compact:max-w-77 compact:has-[~.pad-shell]:px-2 compact:has-[~.pad-shell]:pt-4 compact:has-[~.pad-shell]:pb-2 laptop:px-4 laptop:pt-5 laptop:pb-3 wide:max-w-97 w-full max-w-86 min-w-0 px-6 pt-6 pb-3"
                 >
-                  <div className="bg-pad-bed border-pad absolute top-2.5 left-2.5 size-1 rounded-full border" />
-                  <div className="bg-pad-bed border-pad absolute top-2.5 right-2.5 size-1 rounded-full border" />
-                  <div className="bg-pad-bed border-black grid grid-cols-8 gap-2 rounded-lg border p-2 compact:has-[.pixel]:gap-1 laptop:gap-1 laptop:p-2 wide:gap-2">
+                  <PadBed className="gap-2 p-2 compact:has-[.pixel]:gap-1 laptop:gap-1 laptop:p-2 wide:gap-2">
                     {Array.from({ length: 64 }, (_, i) => {
                       const localRow = Math.floor(i / 8),
                         localCol = i % 8,
@@ -658,7 +574,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                       return (
                         <button
                           key={i}
-                          className={`pixel aspect-square min-w-0 touch-none rounded-sm border border-white/5 p-0 transition hover:brightness-140 hover:outline hover:outline-white active:scale-90 ${lit ? "lit" : ""}`}
+                          className={`pixel aspect-square min-w-0 touch-none border border-white/5 p-0 transition hover:brightness-140 hover:outline hover:outline-white active:scale-90 ${lit ? "lit" : ""}`}
                           aria-label={
                             menuChoice
                               ? `Select ${modes.find((m) => m.id === menuChoice)?.name} on pad ${p + 1}`
@@ -704,19 +620,8 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                         />
                       );
                     })}
-                  </div>
-                  <div className="font-display text-pad-text mt-3 text-center text-[10px] tracking-[0.28em]">
-                    BLOOPPAD{" "}
-                    <b className="ml-1 text-[10px] tracking-wide text-pad-text">
-                      MAXX
-                    </b>
-                    <span className="text-pad-text absolute right-6 text-[10px]">
-                      ●
-                    </span>
-                  </div>
-                  <div className="bg-pad-bed border-pad absolute bottom-2.5 left-2.5 size-1 rounded-full border" />
-                  <div className="bg-pad-bed border-pad absolute right-2.5 bottom-2.5 size-1 rounded-full border" />
-                </div>
+                  </PadBed>
+                </PadShell>
               ))}
             </div>
           </div>
@@ -733,7 +638,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
           ) : (
             <div className="text-dim mx-3 mt-1 mb-7 flex flex-wrap items-center justify-center gap-2 text-[10px]">
               <span className="text-sm text-nav">↖</span> Click the pads or use
-              your keyboard <span className="bg-dim mx-1 size-1 rounded-full" />{" "}
+              your keyboard <span className="bg-dim mx-1 size-1" />{" "}
               {midi?.status === "Connected"
                 ? "SCREEN + HARDWARE IN SYNC"
                 : "HARDWARE OPTIONAL"}
@@ -741,7 +646,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
           )}
           <div className="border-line flex items-center gap-2.5 border-t px-6 py-4">
             <button
-              className="bg-app text-canvas hover:bg-app/85 rounded-md px-5 py-3 text-xs font-bold whitespace-nowrap"
+              className="bg-app text-canvas hover:bg-app/85 px-5 py-3 text-xs font-bold whitespace-nowrap"
               onClick={toggle}
               disabled={menuOpen}
             >
@@ -755,7 +660,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                       : "demo")}
             </button>
             <button
-              className="border-line flex items-center gap-1.5 rounded-md border px-3 py-2 text-[11px]"
+              className="border-line flex items-center gap-1.5 border px-3 py-2 text-[11px]"
               disabled={menuOpen}
               onClick={() => {
                 engine.reset();
@@ -768,7 +673,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
               Reset
             </button>
             <button
-              className="border-line rounded-md border px-3 py-2 text-[11px]"
+              className="border-line border px-3 py-2 text-[11px]"
               onClick={() => {
                 if (menuOpen) closeMenu();
                 else openMenu();
@@ -788,7 +693,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
           </div>
         </section>
         <aside className="compact:grid compact:w-full compact:grid-cols-2 compact:gap-3 flex flex-col gap-4">
-          <section className="border-line bg-card compact:p-4 wide:p-5 rounded-xl border p-5">
+          <section className="border-line bg-card compact:p-4 wide:p-5 border p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xs font-semibold">
                 {menuOpen
@@ -893,7 +798,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                   {engine.board.filter((c) => c.some(Boolean)).length} living
                   cells · Tap any pad to toggle a cell, even while running.
                 </p>
-                <div className="grid grid-cols-2 gap-2 [&>button]:rounded-md [&>button]:border [&>button]:border-line [&>button]:px-1 [&>button]:py-2 [&>button]:text-[10px]">
+                <div className="grid grid-cols-2 gap-2 [&>button]:border [&>button]:border-line [&>button]:px-1 [&>button]:py-2 [&>button]:text-[10px]">
                   <button
                     disabled={engine.running}
                     onClick={() => {
@@ -961,7 +866,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                     ? "Solved! Every light is out. Press a pad to play again."
                     : `${engine.board.filter((c) => c.some(Boolean)).length} lights left · Turn them all off.`}
                 </p>
-                <div className="grid grid-cols-2 gap-2 [&>button]:rounded-md [&>button]:border [&>button]:border-line [&>button]:px-1 [&>button]:py-2 [&>button]:text-[10px]">
+                <div className="grid grid-cols-2 gap-2 [&>button]:border [&>button]:border-line [&>button]:px-1 [&>button]:py-2 [&>button]:text-[10px]">
                   <button
                     onClick={() => {
                       engine.newLightsPuzzle();
@@ -987,11 +892,11 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
               </>
             ) : twoPlayerModes.includes(mode) ? (
               <>
-                <div className="bg-canvas flex gap-1 rounded-md p-1">
+                <div className="bg-canvas flex gap-1 p-1">
                   {(["ai", "human"] as const).map((kind) => (
                     <button
                       key={kind}
-                      className={`flex-1 rounded px-1 py-2 text-[10px] ${engine.opponent === kind ? "bg-app text-canvas" : "text-dim"}`}
+                      className={`flex-1 px-1 py-2 text-[10px] ${engine.opponent === kind ? "bg-app text-canvas" : "text-dim"}`}
                       onClick={() => {
                         engine.opponent = kind;
                         engine.reset();
@@ -1006,7 +911,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                   <label className="block text-[10px] text-nav">
                     AI strength
                     <select
-                      className="border-line bg-surface my-2 w-full rounded-md border p-2.5 text-[11px] text-app"
+                      className="border-line bg-surface my-2 w-full border p-2.5 text-[11px] text-app"
                       value={engine.difficulty}
                       onChange={(e) => {
                         engine.difficulty = e.target.value as Difficulty;
@@ -1047,7 +952,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                 </div>
                 {duelModes.includes(mode) && (
                   <>
-                    <label className="mb-2 flex justify-between text-[10px] text-nav [&_b]:rounded [&_b]:bg-app [&_b]:px-1.5 [&_b]:py-1 [&_b]:text-[10px] [&_b]:leading-none [&_b]:font-medium [&_b]:text-canvas">
+                    <label className="mb-2 flex justify-between text-[10px] text-nav [&_b]:bg-app [&_b]:px-1.5 [&_b]:py-1 [&_b]:text-[10px] [&_b]:leading-none [&_b]:font-medium [&_b]:text-canvas">
                       Rope{" "}
                       <b>
                         {Math.round((engine.rope / engine.duelLength) * 100)}%
@@ -1071,7 +976,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                 <p className="text-muted text-xs leading-5" role="status">
                   {matchStatus}
                 </p>
-                <div className="grid grid-cols-2 gap-2 [&>button]:rounded-md [&>button]:border [&>button]:border-line [&>button]:px-1 [&>button]:py-2 [&>button]:text-[10px]">
+                <div className="grid grid-cols-2 gap-2 [&>button]:border [&>button]:border-line [&>button]:px-1 [&>button]:py-2 [&>button]:text-[10px]">
                   <button
                     onClick={() => {
                       engine.reset();
@@ -1108,7 +1013,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                 <label className="block text-[10px] text-nav">
                   Your message
                   <input
-                    className="border-line bg-surface my-2 w-full rounded-md border p-2.5 text-[11px] text-app"
+                    className="border-line bg-surface my-2 w-full border p-2.5 text-[11px] text-app"
                     value={text}
                     maxLength={160}
                     onChange={(e) => {
@@ -1121,7 +1026,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                 <label className="block text-[10px] text-nav">
                   Animation
                   <select
-                    className="border-line bg-surface my-2 w-full rounded-md border p-2.5 text-[11px] text-app"
+                    className="border-line bg-surface my-2 w-full border p-2.5 text-[11px] text-app"
                     onChange={(e) => {
                       engine.effect = e.target.value;
                       force();
@@ -1153,7 +1058,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                     />
                   ))}
                 </div>
-                <div className="grid grid-cols-2 gap-2 [&>button]:rounded-md [&>button]:border [&>button]:border-line [&>button]:px-1 [&>button]:py-2 [&>button]:text-[10px]">
+                <div className="grid grid-cols-2 gap-2 [&>button]:border [&>button]:border-line [&>button]:px-1 [&>button]:py-2 [&>button]:text-[10px]">
                   <button
                     onClick={() => {
                       if (engine.frames.length >= 200) {
@@ -1179,7 +1084,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                     {engine.playback ? "Edit pixels" : "▶ Play frames"}
                   </button>
                   <button onClick={exportFrames}>↓ Export JSON</button>
-                  <label className="border-line cursor-pointer rounded-md border px-1 py-2 text-center text-[10px]">
+                  <label className="border-line cursor-pointer border px-1 py-2 text-center text-[10px]">
                     ↑ Import JSON
                     <input
                       type="file"
@@ -1197,11 +1102,11 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
               </p>
             )}
           </section>
-          <section className="border-line bg-card compact:p-4 wide:p-5 rounded-xl border p-5">
+          <section className="border-line bg-card compact:p-4 wide:p-5 border p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xs font-semibold">Speed and brightness</h2>
             </div>
-            <label className="mb-2 flex justify-between text-[10px] text-nav [&_b]:rounded [&_b]:bg-app [&_b]:px-1.5 [&_b]:py-1 [&_b]:text-[10px] [&_b]:leading-none [&_b]:font-medium [&_b]:text-canvas">
+            <label className="mb-2 flex justify-between text-[10px] text-nav [&_b]:bg-app [&_b]:px-1.5 [&_b]:py-1 [&_b]:text-[10px] [&_b]:leading-none [&_b]:font-medium [&_b]:text-canvas">
               Speed <b>{speed.toFixed(1)}×</b>
             </label>
             <input
@@ -1221,7 +1126,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
               <span>Easy does it</span>
               <span>Let’s go</span>
             </div>
-            <label className="mb-2 flex justify-between text-[10px] text-nav [&_b]:rounded [&_b]:bg-app [&_b]:px-1.5 [&_b]:py-1 [&_b]:text-[10px] [&_b]:leading-none [&_b]:font-medium [&_b]:text-canvas">
+            <label className="mb-2 flex justify-between text-[10px] text-nav [&_b]:bg-app [&_b]:px-1.5 [&_b]:py-1 [&_b]:text-[10px] [&_b]:leading-none [&_b]:font-medium [&_b]:text-canvas">
               Brightness <b>{brightness}%</b>
             </label>
             <input
@@ -1238,14 +1143,14 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
               <span>☀</span>
             </div>
           </section>
-          <section className="border-line bg-card compact:col-span-full compact:p-4 wide:p-5 rounded-xl border p-5">
+          <section className="border-line bg-card compact:col-span-full compact:p-4 wide:p-5 border p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xs font-semibold">Pads</h2>
             </div>
             <label className="block text-[10px] text-nav">
               Connected pads{" "}
               <select
-                className="border-line bg-surface my-2 w-full rounded-md border p-2.5 text-[11px] text-app"
+                className="border-line bg-surface my-2 w-full border p-2.5 text-[11px] text-app"
                 aria-label="Pad count"
                 value={count}
                 onChange={(e) => configure(mode, +e.target.value)}
@@ -1257,11 +1162,11 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                 ))}
               </select>
             </label>
-            <div className="bg-canvas flex gap-1 rounded-md p-1">
+            <div className="bg-canvas flex gap-1 p-1">
               {["horizontal", "vertical"].map((l) => (
                 <button
                   key={l}
-                  className={`flex-1 rounded px-1 py-2 text-[10px] ${layout === l ? "bg-app text-canvas" : "text-dim"}`}
+                  className={`flex-1 px-1 py-2 text-[10px] ${layout === l ? "bg-app text-canvas" : "text-dim"}`}
                   onClick={() => configure(mode, count, l)}
                 >
                   {l === "horizontal" ? "▤" : "▥"}{" "}
@@ -1277,7 +1182,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
               <label>
                 Output rate
                 <select
-                  className="border-line bg-surface my-2 w-full rounded-md border p-2.5 text-[11px] text-app"
+                  className="border-line bg-surface my-2 w-full border p-2.5 text-[11px] text-app"
                   value={fps}
                   onChange={(e) => setFps(+e.target.value)}
                 >
@@ -1303,7 +1208,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
           </section>
         </aside>
       </div>
-      <section className="border-line bg-sidebar compact:p-4 mt-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border px-6 py-5 text-nav text-[11px]">
+      <section className="border-line bg-sidebar compact:p-4 mt-5 flex flex-wrap items-center justify-between gap-4 border px-6 py-5 text-nav text-[11px]">
         <div>
           <div>
             <h3 className="mb-1 text-xs font-medium">
@@ -1325,19 +1230,19 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
         {duel && (
           <div className="flex flex-wrap items-center gap-4 laptop:gap-2">
             <span>
-              <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
+              <kbd className="border-line bg-surface min-w-6 border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
                 A
               </kbd>{" "}
               Red press
             </span>
             <span>
-              <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
+              <kbd className="border-line bg-surface min-w-6 border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
                 L
               </kbd>{" "}
               Blue press
             </span>
             <span>
-              <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
+              <kbd className="border-line bg-surface min-w-6 border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
                 P
               </kbd>{" "}
               Pause
@@ -1347,36 +1252,36 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
         {(mode === "tetris" || mode === "snake") && (
           <div className="flex flex-wrap items-center gap-4 laptop:gap-2">
             <span>
-              <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
+              <kbd className="border-line bg-surface min-w-6 border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
                 ←
               </kbd>
-              <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
+              <kbd className="border-line bg-surface min-w-6 border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
                 →
               </kbd>{" "}
               Move
             </span>
             <span>
-              <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
+              <kbd className="border-line bg-surface min-w-6 border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
                 ↑
               </kbd>{" "}
               {mode === "snake" ? "Up" : "Rotate"}
             </span>
             <span>
-              <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
+              <kbd className="border-line bg-surface min-w-6 border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
                 ↓
               </kbd>{" "}
               {mode === "snake" ? "Down" : "Soft drop"}
             </span>
             {mode === "tetris" && (
               <span>
-                <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
+                <kbd className="border-line bg-surface min-w-6 border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
                   space
                 </kbd>{" "}
                 Drop
               </span>
             )}
             <span>
-              <kbd className="border-line bg-surface min-w-6 rounded border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
+              <kbd className="border-line bg-surface min-w-6 border border-b-2 px-1.5 py-1 text-center text-[10px] text-app">
                 P
               </kbd>{" "}
               Pause

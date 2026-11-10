@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { links } from "../lib/links";
+import { moveInGrid } from "../lib/roving";
 import { BOOTLOADER_SYSEX } from "../lib/bootloader";
+import { PadBed, PadShell } from "../components/PadShell";
 import { Code, PageHead, Section } from "./parts";
 
 const hex = (n: number) => n.toString(16).toUpperCase().padStart(2, "0");
@@ -41,12 +43,8 @@ function AddressExplorer() {
   ].join(" ");
   return (
     <div className="grid items-start gap-6 md:grid-cols-[17rem_minmax(0,1fr)]">
-      <div className="border-pad bg-pad-shell rounded-2xl border p-3">
-        <div
-          role="group"
-          aria-label="Pick a button"
-          className="bg-pad-bed grid grid-cols-8 gap-1 rounded-lg border border-black p-1.5"
-        >
+      <PadShell label={false} className="p-3">
+        <PadBed role="group" aria-label="Pick a button" className="gap-1 p-1.5">
           {Array.from({ length: 64 }, (_, i) => {
             const row = Math.floor(i / 8),
               col = i % 8,
@@ -57,8 +55,19 @@ function AddressExplorer() {
                 type="button"
                 aria-label={`Row ${row}, column ${col}`}
                 aria-pressed={on}
+                data-cell={`${row}-${col}`}
+                tabIndex={on ? 0 : -1}
+                onKeyDown={(e) => {
+                  const next = moveInGrid(
+                    e,
+                    row,
+                    col,
+                    [0, 1, 2, 3, 4, 5, 6, 7],
+                  );
+                  if (next) setCell(next);
+                }}
                 onClick={() => setCell({ row, col })}
-                className="pixel aspect-square rounded-sm border border-white/5 hover:brightness-125"
+                className="pixel aspect-square border border-white/5 hover:brightness-125"
                 style={
                   on
                     ? {
@@ -70,8 +79,8 @@ function AddressExplorer() {
               />
             );
           })}
-        </div>
-      </div>
+        </PadBed>
+      </PadShell>
       <dl className="grid gap-x-8 gap-y-4 text-xs leading-5 sm:grid-cols-2">
         <div>
           <dt className="text-nav">Position</dt>
@@ -87,7 +96,7 @@ function AddressExplorer() {
               value={color}
               onChange={(e) => setColor(e.target.value)}
               aria-label="LED color"
-              className="border-line h-8 w-16 cursor-pointer rounded border bg-transparent"
+              className="border-line h-8 w-16 cursor-pointer border bg-transparent"
             />
           </dd>
         </div>

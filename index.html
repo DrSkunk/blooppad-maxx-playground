@@ -7,6 +7,12 @@
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="description" content="Companion for the BLOOPPAD-MAXX: the built-in game menu explained, browser games over USB-MIDI, one-click firmware flashing, hardware files and protocol reference." />
+    <script>
+      try {
+        const t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
     <title>BLOOPPAD-MAXX Companion</title>
   </head>
   <body>

@@ -38,12 +38,15 @@ export function Hardware() {
       </PageHead>
 
       <div className="grid gap-4 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-        <figure className="border-line overflow-hidden rounded-xl border">
+        <figure className="border-line overflow-hidden border">
           <img
-            src={links.photo("BloopPad-MAXX_Exposed.jpg")}
+            src="media/pad-exposed-1280.webp"
+            srcSet="media/pad-exposed-640.webp 640w, media/pad-exposed-1280.webp 1280w"
+            sizes="(min-width: 768px) 55vw, 100vw"
+            decoding="async"
             alt="A BLOOPPAD-MAXX taken apart: the blue cover grid, the white rubber keypad, and the green PCB with round contact pads and an LED in each."
-            width={2160}
-            height={2869}
+            width={1280}
+            height={1700}
             loading="lazy"
             className="aspect-[4/3] w-full object-cover object-[50%_55%]"
           />
@@ -51,9 +54,12 @@ export function Hardware() {
             Cover grid, rubber keypad and PCB. Photo: phyx-be/BLOOPPAD-MAXX.
           </figcaption>
         </figure>
-        <figure className="border-line overflow-hidden rounded-xl border">
+        <figure className="border-line overflow-hidden border">
           <img
-            src={links.photo("BloopPad-MAXX_PCB.jpg")}
+            src="media/pcb-rev00-768.webp"
+            srcSet="media/pcb-rev00-640.webp 640w, media/pcb-rev00-768.webp 768w"
+            sizes="(min-width: 768px) 45vw, 100vw"
+            decoding="async"
             alt="The bare green BLOOPPAD-MAXX PCB, rev 00, with 64 round contact pads in an 8 by 8 grid and the USB-C connector at the top edge."
             width={768}
             height={1020}
@@ -72,7 +78,7 @@ export function Hardware() {
           title="How it’s built"
           lead="Four layers, bottom to top. Each button is a rubber key that presses on a round contact pad on the PCB, with its LED shining up through the key."
         >
-          <ol className="border-line divide-line-soft divide-y rounded-xl border text-xs leading-5">
+          <ol className="border-line divide-line-soft divide-y border text-xs leading-5">
             {[
               [
                 "Bottom plate",
@@ -123,7 +129,7 @@ export function Hardware() {
             ))}
           </dl>
           <div
-            className="border-line-strong bg-canvas mt-6 max-w-2xl rounded-xl border p-5 text-xs leading-5"
+            className="border-line-strong bg-canvas mt-6 max-w-2xl border p-5 text-xs leading-5"
             role="note"
           >
             <h3 className="text-app font-semibold">Power and brightness</h3>
@@ -145,12 +151,12 @@ export function Hardware() {
             {header.map(([pin, use]) => (
               <div
                 key={pin}
-                className="border-line bg-card min-w-36 flex-1 rounded-lg border px-4 py-3"
+                className="border-line bg-card min-w-36 flex-1 border px-4 py-3"
               >
                 <div className="flex items-center gap-2">
                   <span
                     aria-hidden="true"
-                    className="border-pad bg-canvas size-3 rounded-full border-2"
+                    className="border-pad bg-canvas size-3 border-2"
                   />
                   <span className="font-display text-app text-sm font-semibold">
                     {pin}
@@ -185,7 +191,7 @@ export function Hardware() {
           title="Design files"
           lead="Everything you need to make or modify one. Links open on GitHub."
         >
-          <div className="border-line divide-line-soft grid divide-y rounded-xl border sm:grid-cols-2 sm:divide-y-0 [&>*]:sm:border-line-soft [&>*:nth-child(n+3)]:sm:border-t [&>*:nth-child(odd)]:sm:border-r">
+          <div className="border-line divide-line-soft grid divide-y border sm:grid-cols-2 sm:divide-y-0 [&>*]:sm:border-line-soft [&>*:nth-child(n+3)]:sm:border-t [&>*:nth-child(odd)]:sm:border-r">
             <FileLink
               href={links.schematic}
               title="Schematic (PDF)"

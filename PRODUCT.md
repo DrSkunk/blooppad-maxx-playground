@@ -46,7 +46,7 @@ Endorsed companion to the BLOOPPAD-MAXX hardware project (github.com/phyx-be/BLO
 ## Evidence on Hand
 
 - Official firmware releases via the BLOOPPAD-MAXX GitHub releases API.
-- Hardware photos hotlinked from the hardware repo's `media/` folder (Exposed and PCB), credited in captions.
+- Hardware photos from the hardware repo's `media/` folder (Exposed and PCB), resized to WebP in `public/media/` and credited in captions.
 - Firmware facts come from the hardware repo's README, GAMES.md and firmware source; the firmware font and menu table are ported in `src/lib/firmwareFont.ts` and `src/lib/firmwareMenu.ts` (Apache-2.0).
 - No testimonials, user counts, press or benchmarks; do not invent them.
 
