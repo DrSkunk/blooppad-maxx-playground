@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { Engine, teams } from "../src/lib/engine.ts";
+import { Engine } from "../src/lib/engine.ts";
 import {
   connectBest,
   reversiApply,
@@ -10,35 +10,6 @@ import {
   reversiMoves,
 } from "../src/lib/games.ts";
 import { MidiAdapter, decode, encode } from "../src/lib/midi.ts";
-import { menuModeAt, renderDeviceMenu } from "../src/lib/deviceMenu.ts";
-
-test("device menu exposes only the three requested games on every pad", () => {
-  assert.deepEqual(teams[0], [255, 0, 0]);
-  assert.deepEqual(
-    Array.from({ length: 8 }, (_, row) => menuModeAt(row)),
-    ["tug", "tug", null, "connect", "connect", null, "tetris", "tetris"],
-  );
-  for (const [width, height] of [
-    [8, 8],
-    [16, 8],
-    [8, 16],
-  ]) {
-    const frame = renderDeviceMenu(width, height);
-    assert.equal(frame.length, width * height);
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        assert.deepEqual(
-          frame[y * width + x],
-          frame[(y % 8) * width + (x % 8)],
-        );
-      }
-    }
-    assert.deepEqual(frame[2 * width], [0, 0, 0]);
-    assert.deepEqual(frame[5 * width], [0, 0, 0]);
-    assert.deepEqual(frame[0], teams[0]);
-    assert.deepEqual(frame[3 * width + 1], teams[1]);
-  }
-});
 
 test("exact SysEx bytes, corners, clamping, full frame and changed-cell batching", () => {
   const e = new Engine();

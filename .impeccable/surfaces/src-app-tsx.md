@@ -9,7 +9,7 @@ related_targets: []
 
 Mode: Operate on the pad map and tools (browser games, flasher); Read on Hardware and Hack.
 Audience: makers who own a pad. Jobs: understand the hardware, play the built-in firmware games, put the pad in MIDI mode for browser games, flash firmware, hack the protocol.
-Constraints: facts only from phyx-be/BLOOPPAD-MAXX (README, GAMES.md, firmware source) and this repo. Flashing safety unchanged. Browser-driven pad menu kept but labelled as the browser's menu, MIDI mode only.
+Constraints: facts only from phyx-be/BLOOPPAD-MAXX (README, GAMES.md, firmware source) and this repo. Flashing safety unchanged.
 
 ## Direction contract
 

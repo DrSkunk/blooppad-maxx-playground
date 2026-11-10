@@ -25,7 +25,6 @@ Endorsed companion to the BLOOPPAD-MAXX hardware project (github.com/phyx-be/BLO
 - Browser games require the pad in MIDI mode.
 - Flashing: from the menu or MIDI mode the firmware accepts the reboot SysEx `F0 13 37 00 42 4F 4F F7` and enters the WCH bootloader (LEDs dim purple, times out after a few seconds). Fallback: hold the board boot button while reconnecting USB. Windows may need a WinUSB driver.
 - Multi-pad setups: 1–4 pads, horizontal or vertical (8×8 up to 32×8 / 8×32), explicit per-unit input/output assignment, corner test for orientation.
-- Browser menu on the pad (tug of war, connect four, Tetris), driven by the connected browser in MIDI mode. Always labelled as the browser's menu so it is not confused with the firmware menu.
 - Deployed on GitHub Pages; firmware releases fetched through a cached Vercel proxy.
 
 ## Capabilities and Constraints
@@ -35,7 +34,7 @@ Endorsed companion to the BLOOPPAD-MAXX hardware project (github.com/phyx-be/BLO
 - No server, accounts, audio or MIDI handshake. Edits are held in memory; export before reset.
 - Physical orientation, real pairing, throughput and reconnect behavior remain unverified on hardware.
 - Tracks: Pad menu, Browser games, Flash firmware, Hardware, Hack.
-- Terminology: "pad", "BLOOPPAD-MAXX", "game menu" (firmware), "browser menu" (this site), "MIDI mode", "bootloader", "simulator", "layout", "corner test".
+- Terminology: "pad", "BLOOPPAD-MAXX", "game menu" (firmware only; the site has no on-pad menu of its own), "MIDI mode", "bootloader", "simulator", "layout", "corner test".
 
 ## Brand Commitments
 

@@ -1,6 +1,6 @@
 /* The engine and MIDI adapter are mutable external services. The single scheduler publishes frames to React. */
 /* oxlint-disable react/immutability */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Engine,
   duelModes,
@@ -12,10 +12,15 @@ import {
 import type { Mode, RGB } from "../lib/engine";
 import type { Difficulty } from "../lib/games.ts";
 import { MidiAdapter } from "../lib/midi";
-import { menuModeAt, renderDeviceMenu } from "../lib/deviceMenu";
 import { PadBed, PadShell } from "../components/PadShell";
 import { modes } from "../lib/modes";
-import { flagCount, mineCount } from "../lib/minesweeper";
+import {
+  FLAG,
+  HIDDEN,
+  NUMBER_COLORS,
+  flagCount,
+  mineCount,
+} from "../lib/minesweeper";
 export function Playground({ initialMode }: { initialMode?: Mode }) {
   const [engine] = useState(() => {
     const e = new Engine();
@@ -35,11 +40,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
     [notice, setNotice] = useState(""),
     [text, setText] = useState("HELLO BLOOP!"),
     [color, setColor] = useState(0),
-    [orientation, setOrientation] = useState(false),
-    [menuOpen, setMenuOpen] = useState(false);
-  const menuOpenRef = useRef(false);
-  const menuShownOnConnect = useRef(false);
-  const menuCorners = useRef(new Set<string>());
+    [orientation, setOrientation] = useState(false);
   const [settings] = useState(() => ({
     count,
     layout,
@@ -65,13 +66,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
         (slot, r, c, p) => {
           onDevicePad(slot, r, c, p, "hardware");
         },
-        () => {
-          if (midi.status === "Connected" && !menuShownOnConnect.current) {
-            menuShownOnConnect.current = true;
-            openMenu();
-          }
-          refresh((n) => n + 1);
-        },
+        () => refresh((n) => n + 1),
       ),
   );
   useEffect(() => {
@@ -85,9 +80,7 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
       if (now - sent >= 1000 / settings.fps) {
         sent = now;
         const s = settings;
-        let raw = menuOpenRef.current
-          ? renderDeviceMenu(engine.width, engine.height)
-          : engine.render();
+        let raw = engine.render();
         if (s.orientation) {
           raw = engine.blank();
           for (let p = 0; p < s.count; p++) {
@@ -146,10 +139,6 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
     };
     const held = new Set<string>();
     const down = (e: KeyboardEvent) => {
-      if (menuOpenRef.current) {
-        if (e.key === "Escape") closeMenu();
-        return;
-      }
       if (
         e.target instanceof HTMLElement &&
         e.target.matches("input,textarea,select")
@@ -212,9 +201,6 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
     };
   }, [engine, midi, settings]);
   function configure(m: Mode, n = count, l = layout) {
-    menuOpenRef.current = false;
-    setMenuOpen(false);
-    menuCorners.current.clear();
     midi.release();
     Object.assign(settings, { count: n, layout: l });
     setMode(m);
@@ -230,20 +216,6 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
     setNotice("");
     force();
   }
-  function openMenu() {
-    engine.running = false;
-    engine.held.clear();
-    menuCorners.current.clear();
-    menuOpenRef.current = true;
-    setMenuOpen(true);
-    setOrientation(false);
-    force();
-  }
-  function closeMenu() {
-    menuOpenRef.current = false;
-    setMenuOpen(false);
-    force();
-  }
   function onDevicePad(
     slot: number,
     row: number,
@@ -251,33 +223,6 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
     pressed: boolean,
     source: string,
   ) {
-    const corner = `${source}:${slot}:${col}`;
-    if (row === 0 && (col === 0 || col === 7)) {
-      if (pressed) menuCorners.current.add(corner);
-      else menuCorners.current.delete(corner);
-    }
-    if (menuOpenRef.current) {
-      if (pressed) {
-        const selected = menuModeAt(row);
-        if (selected) {
-          engine.opponent = "human";
-          configure(selected, settings.count, settings.layout);
-          engine.running = true;
-          force();
-        }
-      }
-      return;
-    }
-    if (
-      pressed &&
-      row === 0 &&
-      (col === 0 || col === 7) &&
-      menuCorners.current.has(`${source}:${slot}:0`) &&
-      menuCorners.current.has(`${source}:${slot}:7`)
-    ) {
-      openMenu();
-      return;
-    }
     engine.onPad(
       row + (settings.layout === "vertical" ? slot * 8 : 0),
       col + (settings.layout === "horizontal" ? slot * 8 : 0),
@@ -439,8 +384,8 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
         {modes.map((m) => (
           <button
             key={m.id}
-            aria-current={mode === m.id && !menuOpen ? "page" : undefined}
-            className={`flex flex-none items-center gap-2 px-3 py-2.5 text-[12px] font-medium whitespace-nowrap transition-colors hover:bg-surface ${mode === m.id && !menuOpen ? "bg-app text-canvas" : "text-nav"}`}
+            aria-current={mode === m.id ? "page" : undefined}
+            className={`flex flex-none items-center gap-2 px-3 py-2.5 text-[12px] font-medium whitespace-nowrap transition-colors hover:bg-surface ${mode === m.id ? "bg-app text-canvas" : "text-nav"}`}
             onClick={() => configure(m.id)}
           >
             {m.name}
@@ -449,12 +394,10 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
       </nav>
       <section className="mb-6">
         <h2 className="font-display compact:text-2xl text-3xl font-semibold tracking-tight">
-          {menuOpen ? "Browser menu" : current.name}
+          {current.name}
         </h2>
         <p className="text-muted mt-2 max-w-2xl text-xs leading-5">
-          {menuOpen
-            ? "This menu comes from the browser, not from the firmware, and only shows on pads in MIDI mode. Tap the red, blue or amber band to start a game. Press both top corners together to reopen it."
-            : current.desc}
+          {current.desc}
         </p>
       </section>
       {!devices && midi.error && (
@@ -531,23 +474,21 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
           <div className="border-line-soft text-nav flex h-13 items-center justify-between border-b px-5 text-[10px] tracking-widest">
             <span className="flex items-center gap-2">
               <span className="bg-success size-1.5" />
-              {menuOpen
-                ? "BROWSER MENU · TAP A BAND"
-                : engine.over
-                  ? mode === "lights"
-                    ? "SOLVED · PRESS A PAD"
-                    : mode === "mines"
-                      ? `${engine.minesResult === "cleared" ? "CLEARED" : "BOOM"} · PRESS A PAD`
-                      : twoPlayer
-                        ? `${engine.winner === 3 ? "DRAW" : engine.winner === 1 ? "RED WINS" : "BLUE WINS"} · PRESS A PAD`
-                        : engine.endingPhase === "flash"
-                          ? "GAME OVER"
-                          : engine.endingPhase === "score"
-                            ? "YOUR FINAL SCORE"
-                            : "PLAY AGAIN · PRESS A PAD"
-                  : engine.running
-                    ? "LIVE PREVIEW"
-                    : "READY TO PLAY"}
+              {engine.over
+                ? mode === "lights"
+                  ? "SOLVED · PRESS A PAD"
+                  : mode === "mines"
+                    ? `${engine.minesResult === "cleared" ? "CLEARED" : "BOOM"} · PRESS A PAD`
+                    : twoPlayer
+                      ? `${engine.winner === 3 ? "DRAW" : engine.winner === 1 ? "RED WINS" : "BLUE WINS"} · PRESS A PAD`
+                      : engine.endingPhase === "flash"
+                        ? "GAME OVER"
+                        : engine.endingPhase === "score"
+                          ? "YOUR FINAL SCORE"
+                          : "PLAY AGAIN · PRESS A PAD"
+                : engine.running
+                  ? "LIVE PREVIEW"
+                  : "READY TO PLAY"}
             </span>
             <span className="flex items-center gap-2">
               {engine.width} × {engine.height}
@@ -577,17 +518,12 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                         row = localRow + (layout === "vertical" ? p * 8 : 0),
                         col = localCol + (layout === "horizontal" ? p * 8 : 0),
                         rgb = frame[row * engine.width + col] ?? [0, 0, 0],
-                        lit = rgb.some(Boolean),
-                        menuChoice = menuOpen ? menuModeAt(localRow) : null;
+                        lit = rgb.some(Boolean);
                       return (
                         <button
                           key={i}
                           className={`pixel aspect-square min-w-0 touch-none border border-white/5 p-0 transition hover:brightness-140 hover:outline hover:outline-white active:scale-90 ${lit ? "lit" : ""}`}
-                          aria-label={
-                            menuChoice
-                              ? `Select ${modes.find((m) => m.id === menuChoice)?.name} on pad ${p + 1}`
-                              : `Pad ${p + 1}, row ${localRow + 1}, column ${localCol + 1}`
-                          }
+                          aria-label={`Pad ${p + 1}, row ${localRow + 1}, column ${localCol + 1}`}
                           style={
                             lit
                               ? {
@@ -633,47 +569,17 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
               ))}
             </div>
           </div>
-          {menuOpen ? (
-            <div className="text-nav mx-3 mt-2 mb-7 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[10px]">
-              <span>
-                <span
-                  aria-hidden="true"
-                  className="border-dim mr-1.5 inline-block size-2 border align-middle"
-                  style={{ background: `rgb(${teams[0]})` }}
-                />
-                Top: Tug of war · 2 players
-              </span>
-              <span>
-                <span
-                  aria-hidden="true"
-                  className="border-dim mr-1.5 inline-block size-2 border align-middle"
-                  style={{ background: `rgb(${teams[1]})` }}
-                />
-                Middle: Connect four · 2 players
-              </span>
-              <span>
-                <span
-                  aria-hidden="true"
-                  className="border-dim mr-1.5 inline-block size-2 border align-middle"
-                  style={{ background: "#ffb74d" }}
-                />
-                Bottom: Tetris
-              </span>
-            </div>
-          ) : (
-            <div className="text-dim mx-3 mt-1 mb-7 flex flex-wrap items-center justify-center gap-2 text-[10px]">
-              Click the pads or use your keyboard{" "}
-              <span className="bg-dim mx-1 size-1" />{" "}
-              {midi?.status === "Connected"
-                ? "SCREEN + HARDWARE IN SYNC"
-                : "HARDWARE OPTIONAL"}
-            </div>
-          )}
+          <div className="text-dim mx-3 mt-1 mb-7 flex flex-wrap items-center justify-center gap-2 text-[10px]">
+            Click the pads or use your keyboard{" "}
+            <span className="bg-dim mx-1 size-1" />{" "}
+            {midi?.status === "Connected"
+              ? "SCREEN + HARDWARE IN SYNC"
+              : "HARDWARE OPTIONAL"}
+          </div>
           <div className="border-line flex items-center gap-2.5 border-t px-6 py-4">
             <button
               className="bg-app text-canvas hover:bg-app/85 px-5 py-3 text-xs font-bold whitespace-nowrap"
               onClick={toggle}
-              disabled={menuOpen}
             >
               {engine.running
                 ? "Pause"
@@ -689,7 +595,6 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
             </button>
             <button
               className="border-line flex items-center gap-1.5 border px-3 py-2 text-[11px]"
-              disabled={menuOpen}
               onClick={() => {
                 engine.reset();
                 force();
@@ -697,23 +602,10 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
             >
               Reset
             </button>
-            <button
-              className="border-line border px-3 py-2 text-[11px]"
-              onClick={() => {
-                if (menuOpen) closeMenu();
-                else openMenu();
-              }}
-            >
-              {menuOpen ? "Close browser menu" : "Browser menu"}
-            </button>
             <span className="text-dim laptop:hidden ml-auto max-w-25 text-[10px] leading-4">
-              {menuOpen
-                ? "Tap a colored row to choose."
-                : engine.over
-                  ? "Press a pad or Play again for another round."
-                  : engine.running
-                    ? ""
-                    : ""}
+              {engine.over
+                ? "Press a pad or Play again for another round."
+                : ""}
             </span>
           </div>
         </section>
@@ -721,49 +613,16 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
           <section className="border-line bg-card compact:p-4 wide:p-5 border p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xs font-semibold">
-                {menuOpen
-                  ? "Browser menu"
-                  : mode === "tetris" || mode === "snake"
-                    ? "The score"
-                    : mode === "mines"
-                      ? "The minefield"
-                      : twoPlayer
-                        ? "The match"
-                        : "Make it yours"}
+                {mode === "tetris" || mode === "snake"
+                  ? "The score"
+                  : mode === "mines"
+                    ? "The minefield"
+                    : twoPlayer
+                      ? "The match"
+                      : "Make it yours"}
               </h2>
             </div>
-            {menuOpen ? (
-              <div className="space-y-3 text-xs leading-5">
-                <p>
-                  <span
-                    aria-hidden="true"
-                    className="border-dim mr-1.5 inline-block size-2 border align-middle"
-                    style={{ background: `rgb(${teams[0]})` }}
-                  />
-                  Top · Tug of war · 2 players
-                </p>
-                <p>
-                  <span
-                    aria-hidden="true"
-                    className="border-dim mr-1.5 inline-block size-2 border align-middle"
-                    style={{ background: `rgb(${teams[1]})` }}
-                  />
-                  Middle · Connect four · 2 players
-                </p>
-                <p>
-                  <span
-                    aria-hidden="true"
-                    className="border-dim mr-1.5 inline-block size-2 border align-middle"
-                    style={{ background: "#ffb74d" }}
-                  />
-                  Bottom · Tetris
-                </p>
-                <p className="text-muted border-line border-t pt-3 text-[10px]">
-                  Tap any lit row on the pad. Press both top corners together to
-                  open this menu during a game.
-                </p>
-              </div>
-            ) : mode === "tetris" || mode === "snake" ? (
+            {mode === "tetris" || mode === "snake" ? (
               <>
                 <div className="font-display compact:text-3xl flex items-baseline gap-3 text-4xl font-medium tracking-wide">
                   {String(engine.score).padStart(4, "0")}
@@ -944,11 +803,49 @@ export function Playground({ initialMode }: { initialMode?: Mode }) {
                 >
                   New game
                 </button>
-                <p className="text-muted mt-4 text-xs leading-5">
-                  Press a cell to reveal it. Hold it for about 0.4 s to plant or
-                  remove a blinking yellow flag. Numbers count the mines around
-                  a cell: 1 blue, 2 green, 3 red.
-                </p>
+                <ul className="text-muted mt-4 space-y-1 text-xs leading-5">
+                  <li>Press a cell to reveal it.</li>
+                  <li>
+                    Hold a cell for about 0.4 s to plant or remove a flag.
+                  </li>
+                  <li>
+                    A revealed color tells how many of its 8 neighbors hide a
+                    mine. Dark means none.
+                  </li>
+                </ul>
+                <h3 className="text-nav mt-4 text-[10px] font-semibold tracking-[0.16em] uppercase">
+                  Colors
+                </h3>
+                <ul className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                  {NUMBER_COLORS.slice(1).map((c, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <span
+                        aria-hidden="true"
+                        className="border-dim size-3 shrink-0 border"
+                        style={{ background: `rgb(${c})` }}
+                      />
+                      <span className="tabular-nums">
+                        {i + 1} {i === 0 ? "mine" : "mines"}
+                      </span>
+                    </li>
+                  ))}
+                  <li className="col-span-2 flex items-center gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="border-dim size-3 shrink-0 border"
+                      style={{ background: `rgb(${FLAG})` }}
+                    />
+                    Flag (blinks)
+                  </li>
+                  <li className="col-span-2 flex items-center gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="border-dim size-3 shrink-0 border"
+                      style={{ background: `rgb(${HIDDEN})` }}
+                    />
+                    Not revealed yet
+                  </li>
+                </ul>
               </>
             ) : mode === "lights" ? (
               <>

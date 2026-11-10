@@ -163,7 +163,7 @@ export const firmwareGames: FirmwareGame[] = [
     players: "1 player, 3 difficulties",
     play: [
       "Press a cell to reveal it. Press and hold about 0.4 s to plant or remove a flag.",
-      "The first reveal is always safe. Numbers use the classic colors: 1 blue, 2 green, 3 red.",
+      "The first reveal is always safe. A revealed cell's color tells how many of its 8 neighbors hide a mine: 1 blue, 2 green, 3 red, 4 magenta, 5 orange, 6 cyan, 7 white, 8 grey. Dark means none.",
       "8, 12 or 16 mines depending on difficulty.",
     ],
     ends: anyButtonToMenu,

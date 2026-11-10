@@ -50,7 +50,6 @@ At the end of Tetris or Snake, a brief pink impact pulse expands across the pads
 
 Use Start/Pause and Reset. Arrow keys move; Tetris uses Up to rotate, Down to soft drop and Space to hard drop. P toggles pause. Onscreen/hardware grid presses map the top third to Up, middle left/right to movement, and bottom third to Down. In Pixel studio, press a cell to paint; Enter also paints a focused cell. The app pauses on window blur.
 
-When a pad in MIDI mode first connects, the browser shows its own **browser menu** on the pad's LEDs (separate from the firmware's game menu). Tap the red top band for **Tug of war (two players)**, the blue middle band for **Connect four (two players)**, or the amber bottom band for **Tetris**. Both two-player choices use human players, with red as player one and blue as player two. Press both top corner buttons together during a game to reopen the menu, or use **Browser menu** in the browser. The simulator mirrors the menu, and each connected pad shows the same three choices. The browser must remain connected; this menu does not run in the pad firmware.
 
 ## Multiple pads
 

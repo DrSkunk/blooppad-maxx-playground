@@ -54,7 +54,7 @@ export const modes: {
   {
     id: "mines",
     name: "Minesweeper",
-    desc: "The pad’s own Minesweeper: press to reveal, hold to flag. The first cell is always safe; clear every safe cell to win.",
+    desc: "Open every cell without a mine. Press to reveal, hold to flag. The first cell is always safe, and each color counts the mines around it.",
   },
   {
     id: "rainbow",
