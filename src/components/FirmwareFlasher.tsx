@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { WebUsbTransport, WchIspFlasher, type Progress } from "wchisp-web";
 import {
   downloadFirmware,
@@ -6,6 +6,7 @@ import {
   type FirmwareRelease,
 } from "../lib/firmware";
 import { padOutputs, sendBootloader } from "../lib/bootloader";
+import { prepareMidiFlash } from "../lib/flash";
 
 const PHASES: Record<string, string> = {
   identify: "Identifying chip",
@@ -20,28 +21,6 @@ function message(error: unknown): string {
   if (error instanceof DOMException && error.name === "NotFoundError")
     return "No USB device was selected.";
   return error instanceof Error ? error.message : String(error);
-}
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-/** After the reboot SysEx, wait for a WCH bootloader this site already has permission for. */
-async function pairedBootloader(
-  timeoutMs: number,
-): Promise<WebUsbTransport | undefined> {
-  const end = performance.now() + timeoutMs;
-  while (performance.now() < end) {
-    const found = await WebUsbTransport.openPaired().catch(
-      () => [] as WebUsbTransport[],
-    );
-    if (found.length) {
-      await Promise.all(
-        found.slice(1).map((t) => t.close().catch(() => undefined)),
-      );
-      return found[0];
-    }
-    await wait(250);
-  }
-  return undefined;
 }
 
 type Route = "midi" | "button";
@@ -62,12 +41,15 @@ export function FirmwareFlasher() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const flashController = useRef<AbortController | null>(null);
   const usbSupported =
     typeof navigator !== "undefined" && Boolean(navigator.usb);
   const proxyConfigured = Boolean(import.meta.env.VITE_FIRMWARE_PROXY_ORIGIN);
   const release =
     releases.find((item) => item.assetId === selectedId) ?? releases[0];
   const pad = pads.find((p) => p.id === padId) ?? pads[0];
+
+  useEffect(() => () => flashController.current?.abort(), []);
 
   useEffect(() => {
     let active = true;
@@ -107,20 +89,30 @@ export function FirmwareFlasher() {
     }
   }
 
-  async function readFirmware(): Promise<Uint8Array> {
+  async function readFirmware(signal: AbortSignal): Promise<Uint8Array> {
+    signal.throwIfAborted();
     if (source === "release" && release) {
       setStatus("Downloading firmware… 0%");
-      return downloadFirmware(release, (percent) =>
-        setStatus(`Downloading firmware… ${percent}%`),
+      const bytes = await downloadFirmware(
+        release,
+        (percent) => {
+          if (!signal.aborted) setStatus(`Downloading firmware… ${percent}%`);
+        },
+        undefined,
+        signal,
       );
+      signal.throwIfAborted();
+      return bytes;
     }
     if (!file) throw new Error("Choose a firmware file.");
     setStatus("Reading local firmware…");
-    return new Uint8Array(await file.arrayBuffer());
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    signal.throwIfAborted();
+    return bytes;
   }
 
   async function flash() {
-    if (!usbSupported || busy) return;
+    if (!usbSupported || busy || flashController.current) return;
     if (source === "release" && (!release || !proxyConfigured)) return;
     if (source === "local" && !file) return;
     if (
@@ -130,35 +122,64 @@ export function FirmwareFlasher() {
         file.size === 0 ||
         file.size > 65536)
     ) {
+      setStatus("");
       setError("Choose a non-empty .bin file no larger than 64 KiB.");
       return;
     }
-    if (route === "midi" && !pad) {
-      setError("Find the pad first, or switch to the boot button.");
+    if (route === "midi" && (!pad || pad.state !== "connected")) {
+      setPads([]);
+      setPadId("");
+      setStatus("");
+      setError(
+        "The selected pad is disconnected. Find it again, or switch to the boot button.",
+      );
       return;
     }
     setBusy(true);
     setError("");
+    const controller = new AbortController();
+    flashController.current = controller;
+    let rebootRequested = false;
     let isp: WchIspFlasher | undefined;
     let transport: WebUsbTransport | undefined;
     try {
       let bytes: Uint8Array;
       if (route === "midi" && pad) {
-        // The bootloader returns to the firmware after a few seconds, so fetch first, then reboot.
-        bytes = await readFirmware();
-        setStatus("Rebooting the pad into its bootloader…");
-        sendBootloader(pad);
-        transport = await pairedBootloader(2500);
-        if (!transport) {
-          setStatus("Select the WCH USB bootloader device…");
-          transport = await WebUsbTransport.request();
-        }
+        setStatus(
+          "Preparing firmware. Select the WCH bootloader when it appears…",
+        );
+        const prepared = await prepareMidiFlash(
+          () => WebUsbTransport.request(),
+          () => readFirmware(controller.signal),
+          () => {
+            controller.signal.throwIfAborted();
+            setStatus(
+              "Pad rebooting. Select the WCH bootloader in the USB chooser…",
+            );
+            try {
+              if (pad.state !== "connected")
+                throw new Error("The pad disconnected while preparing firmware");
+              sendBootloader(pad);
+              rebootRequested = true;
+            } catch (reason) {
+              throw new Error(
+                `Could not reboot the selected pad: ${message(reason)}. Close the USB chooser and find the pad again.`,
+                { cause: reason },
+              );
+            }
+          },
+          controller.signal,
+        );
+        transport = prepared.transport;
+        bytes = prepared.firmware;
       } else {
         // WebUSB's chooser must be called directly from the click, before downloads.
         setStatus("Select the WCH USB bootloader device…");
         transport = await WebUsbTransport.request();
-        bytes = await readFirmware();
+        controller.signal.throwIfAborted();
+        bytes = await readFirmware(controller.signal);
       }
+      controller.signal.throwIfAborted();
       isp = new WchIspFlasher(transport);
       const progress: Progress = (event) => {
         const label = PHASES[event.phase] ?? event.phase;
@@ -170,6 +191,7 @@ export function FirmwareFlasher() {
       };
       setStatus("Identifying chip…");
       const chip = await isp.connect(progress);
+      controller.signal.throwIfAborted();
       if (chip.chipId !== 0x56 || chip.deviceType !== 0x23) {
         throw new Error(
           `Expected CH32X035G8U6 (0x5623), found ${chip.name}. Nothing was written.`,
@@ -185,23 +207,44 @@ export function FirmwareFlasher() {
         "Firmware verified and installed. The pad restarts and shows its version, then the game menu.",
       );
       setPads([]);
+      setPadId("");
+      setPadError("");
     } catch (reason) {
+      if (controller.signal.aborted) {
+        if (!(reason instanceof DOMException && reason.name === "AbortError")) {
+          console.warn(
+            "Firmware flashing failed after leaving the page",
+            reason,
+          );
+        }
+        return;
+      }
       const text = message(reason);
+      if (rebootRequested) {
+        setPads([]);
+        setPadId("");
+        setPadError(
+          "The pad was asked to reboot. When it returns, find it again to retry, or use the boot button.",
+        );
+      }
       setError(
         route === "midi" &&
           reason instanceof DOMException &&
           reason.name === "SecurityError"
-          ? "The browser blocked the USB chooser. Press Flash again; if the pad already restarted, use the boot button route."
+          ? "The browser blocked the USB chooser. Find the pad and press Flash again."
           : text,
       );
       setStatus("");
     } finally {
+      controller.abort();
       try {
         if (isp) await isp.close();
         else await transport?.close();
       } catch (reason) {
         console.warn("Could not close WebUSB transport", reason);
       }
+      if (flashController.current === controller)
+        flashController.current = null;
       setBusy(false);
     }
   }
@@ -250,10 +293,10 @@ export function FirmwareFlasher() {
           {route === "midi" ? (
             <div className="mt-4 space-y-3">
               <p className="text-muted max-w-prose">
-                Plug the pad in and let it reach the game menu, or leave it in
-                MIDI mode. Not during a game: the firmware only listens for the
-                reboot command in the menu and in MIDI mode. No boot button, no
-                replug.
+                With firmware v2.0.2 or newer, plug the pad in and let it reach
+                the game menu, or leave it in MIDI mode. Not during a game: the
+                firmware listens for the reboot command in the menu and in MIDI
+                mode. Use the boot button for older or unresponsive firmware.
               </p>
               <div className="flex flex-wrap items-center gap-3">
                 <button
@@ -427,10 +470,12 @@ export function FirmwareFlasher() {
         <div>
           <p className="text-muted max-w-prose">
             {route === "midi"
-              ? "The pad reboots into its bootloader and writing starts at once; the bootloader gives up after a few seconds. The first time, Chrome asks which USB device to use: pick the WCH bootloader."
+              ? "The USB chooser opens immediately. Once the firmware is ready, the pad reboots; select the WCH bootloader as soon as it appears. If it does not appear, close the chooser to check for errors and retry."
               : "Chrome asks which USB device to use: pick the WCH bootloader."}{" "}
-            The chip is checked for CH32X035G8U6 before anything is written, and
-            the flash is verified afterwards.
+            The chooser appears on every flash. The chip is checked for
+            CH32X035G8U6 before writing, and the flash is verified afterwards.
+            This identifies the chip, not the board: unplug other CH32 boards
+            before flashing.
           </p>
           {!usbSupported && (
             <p role="alert" className="mt-3 text-danger">

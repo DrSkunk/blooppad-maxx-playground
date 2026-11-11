@@ -38,8 +38,8 @@ export function Flash() {
             <p className="text-muted mt-2">
               While the pad is in its bootloader after the reboot command, all
               LEDs are dim purple. If no upload starts, it returns to the
-              firmware by itself after a few seconds. Nothing is lost; press
-              Flash again.
+              firmware by itself after a few seconds. Nothing is lost; close
+              the USB chooser, find the pad again, and retry.
             </p>
           </section>
           <section>

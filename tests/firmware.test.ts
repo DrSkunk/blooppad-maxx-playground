@@ -30,6 +30,23 @@ test("selects published firmware assets and verifies downloaded bytes", async (t
   await assert.rejects(downloadFirmware(selected, () => {}, "https://proxy.example"), /incomplete/);
 });
 
+test("firmware downloads can be canceled while the USB chooser is open", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  let receivedSignal: AbortSignal | null | undefined;
+  globalThis.fetch = async (_input, init) => {
+    receivedSignal = init?.signal;
+    return new Promise((_resolve, reject) => {
+      receivedSignal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+    });
+  };
+  const controller = new AbortController();
+  const pending = downloadFirmware(selected, () => {}, "https://proxy.example", controller.signal);
+  assert.equal(receivedSignal, controller.signal);
+  controller.abort();
+  await assert.rejects(pending, { name: "AbortError" });
+});
+
 test("proxy only serves a scoped firmware asset and sends browser CORS headers", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });

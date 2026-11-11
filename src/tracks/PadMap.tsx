@@ -153,7 +153,7 @@ export function PadMap() {
             {
               href: "#/flash",
               title: "Flash firmware",
-              body: "Install the latest official release straight from the browser. From the menu or MIDI mode, the pad reboots into its bootloader by itself.",
+              body: "Install the latest official release straight from the browser. With firmware v2.0.2 or newer, the pad can reboot into its bootloader from the menu or MIDI mode.",
               meta: latest ? `Latest ${latest}` : "Official releases",
             },
             {

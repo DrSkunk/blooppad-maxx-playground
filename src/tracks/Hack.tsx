@@ -230,7 +230,8 @@ export function Hack() {
         <Code>{BOOTLOADER_SYSEX.map(hex).join(" ")}</Code>
         <ul className="text-muted mt-4 max-w-2xl list-disc space-y-1.5 pl-4 text-xs leading-5">
           <li>
-            Handled in the game menu and in MIDI mode, not while a game runs.
+            Supported by firmware v2.0.2 and newer in the game menu and in MIDI
+            mode, not while a game runs.
           </li>
           <li>
             00 can never be an LED index, and 42 4F 4F spells “BOO”, so it

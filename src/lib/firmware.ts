@@ -91,10 +91,11 @@ export async function downloadFirmware(
   release: FirmwareRelease,
   onProgress: (percent: number) => void,
   proxyOrigin = import.meta.env.VITE_FIRMWARE_PROXY_ORIGIN,
+  signal?: AbortSignal,
 ): Promise<Uint8Array> {
   const origin = proxyOrigin?.replace(/\/$/, "");
   if (!origin) throw new Error("Firmware download proxy is not configured.");
-  const response = await fetch(`${origin}/api/firmware?asset=${release.assetId}`);
+  const response = await fetch(`${origin}/api/firmware?asset=${release.assetId}`, { signal });
   if (!response.ok) throw new Error(`Firmware download failed (HTTP ${response.status}).`);
   const bytes = new Uint8Array(release.size);
   let received = 0;
